@@ -23,6 +23,7 @@ jobs:
       - run: npm run build
         env:
           AUTH_SECRET: ci-build-only-secret-not-used-at-runtime
+          AUTH_TRUST_HOST: "true"
           AUTH_KEYCLOAK_ID: woertersee-web
           AUTH_KEYCLOAK_SECRET: ci-build-only
           AUTH_KEYCLOAK_ISSUER: http://localhost:8081/realms/woertersee
