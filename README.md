@@ -15,6 +15,8 @@ docker compose up --build
 
 Architecture and delivery decisions live in [`docs`](docs/architecture.md).
 
+The product is delivered web-first, followed by a native mobile client after API stabilization. See the [product roadmap](docs/product-roadmap.md) and [ADR-0002](docs/adr/0002-web-first-mobile-client.md). Contributions use one focused branch and pull request per independent change.
+
 The disposable local learner account is `demo` / `local-demo-only`. Never reuse these local-only credentials in a deployed environment.
 
 ## Refresh legacy vocabulary
