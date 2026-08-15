@@ -1,4 +1,6 @@
 import { auth } from "@/auth";
+import ProgressDashboard from "./progress-dashboard";
+import "./progress-dashboard.css";
 
 const chapters = ["Kapitel 1", "Kapitel 2", "Kapitel 3", "Irregular verbs"];
 
@@ -39,21 +41,24 @@ export default async function Home() {
             Review difficult
           </a>
         </div>
-        <div className="stats">
-          <div>
-            <strong>128</strong>
-            <span>words explored</span>
+        {!session && (
+          <div className="stats">
+            <div>
+              <strong>Your words</strong>
+              <span>saved to your account</span>
+            </div>
+            <div>
+              <strong>Your pace</strong>
+              <span>built around every answer</span>
+            </div>
+            <div>
+              <strong>Your progress</strong>
+              <span>available across devices</span>
+            </div>
           </div>
-          <div>
-            <strong>74%</strong>
-            <span>accuracy</span>
-          </div>
-          <div>
-            <strong>6 days</strong>
-            <span>current streak</span>
-          </div>
-        </div>
+        )}
       </section>
+      {session && <ProgressDashboard />}
       <section className="deck" id="decks">
         <div>
           <p className="eyebrow">BUILD A DECK</p>

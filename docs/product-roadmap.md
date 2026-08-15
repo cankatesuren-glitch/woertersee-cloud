@@ -64,7 +64,7 @@ Web and mobile keep their own navigation, accessibility primitives and presentat
 
 1. Complete global vocabulary and category administration.
 2. Add audit-log browsing and finish the web administration workflow.
-3. Complete the progress dashboard; the deck builder and exact-word picker are available in the web learning flow.
+3. Validate the completed deck builder, exact-word picker and progress dashboard with browser journey tests.
 4. Add PWA installation, accessibility and browser journey tests.
 5. Stabilize OpenAPI contracts and generate a TypeScript client.
 6. Complete event-driven analytics and production infrastructure.
