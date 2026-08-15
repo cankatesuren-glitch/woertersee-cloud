@@ -19,7 +19,8 @@ class CurrentProfileService(private val jdbc: JdbcClient) {
             .param("issuer", issuer)
             .param("subject", jwt.subject)
             .param("name", jwt.getClaimAsString("name"))
-            .query(UUID::class.java).single()
+            .query { result, _ -> result.getObject("id", UUID::class.java) }
+            .single()
     }
 
     fun find(profileId: UUID): CurrentProfile = jdbc.sql(
