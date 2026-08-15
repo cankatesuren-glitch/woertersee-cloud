@@ -3,6 +3,7 @@ package de.woertersee.api.identity
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Service
+import java.sql.Types
 import java.util.UUID
 
 @Service
@@ -18,7 +19,7 @@ class CurrentProfileService(private val jdbc: JdbcClient) {
         ).param("id", UUID.randomUUID())
             .param("issuer", issuer)
             .param("subject", jwt.subject)
-            .param("name", jwt.getClaimAsString("name"))
+            .param("name", jwt.getClaimAsString("name"), Types.VARCHAR)
             .query { result, _ -> result.getObject("id", UUID::class.java) }
             .single()
     }
