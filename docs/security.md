@@ -13,3 +13,5 @@ Personal-word deck selection filters every requested id by the authenticated pro
 Development credentials under `keycloak/` are disposable local values and must not be reused. Production secrets belong in a secret manager.
 
 Admin audit records are available through `GET /api/v1/admin/audit-logs`. The endpoint is read-only, role-protected, paginated, and supports exact filters for action, target type, and actor profile. Correlation IDs connect an administrative change to the originating request without exposing access tokens or identity-provider claims.
+
+Keycloak owns credentials, registration, password recovery and identity-profile changes. Auth.js owns the browser session and redirects; the API accepts only validated bearer tokens. Local registration assigns the `USER` realm role by default. Email verification and password-recovery delivery require SMTP configuration in each deployed Keycloak environment.

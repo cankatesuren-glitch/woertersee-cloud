@@ -21,5 +21,13 @@ class CurrentProfileService(private val jdbc: JdbcClient) {
             .param("name", jwt.getClaimAsString("name"))
             .query(UUID::class.java).single()
     }
-}
 
+    fun find(profileId: UUID): CurrentProfile = jdbc.sql(
+        "SELECT id, display_name FROM profiles WHERE id = :id",
+    ).param("id", profileId).query { result, _ ->
+        CurrentProfile(
+            id = result.getObject("id", UUID::class.java),
+            displayName = result.getString("display_name"),
+        )
+    }.single()
+}
