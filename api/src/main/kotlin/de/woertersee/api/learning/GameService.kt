@@ -1,0 +1,175 @@
+package de.woertersee.api.learning
+
+import de.woertersee.api.learning.model.*
+import de.woertersee.api.platform.error.ConflictException
+import de.woertersee.api.platform.error.NotFoundException
+import org.slf4j.MDC
+import org.springframework.jdbc.core.simple.JdbcClient
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
+
+@Service
+class GameService(private val jdbc: JdbcClient) {
+    @Transactional
+    fun start(profileId: UUID, request: StartGameRequest): GameSessionView {
+        val candidates = selectCandidates(profileId, request)
+        require(candidates.isNotEmpty()) { "No eligible words found" }
+        val ordered = when (request.ordering) {
+            Ordering.AZ -> candidates.sortedBy { it.german.lowercase() }
+            Ordering.RANDOM -> candidates.shuffled()
+        }.take(request.cardCount)
+        return createSession(profileId, null, SessionType.ORIGINAL, request.direction, request.ordering, ordered)
+    }
+
+    @Transactional
+    fun answer(profileId: UUID, sessionId: UUID, cardId: UUID, idempotencyKey: String, result: AnswerResult): GameSessionView {
+        require(idempotencyKey.length in 8..100) { "Idempotency-Key must contain 8-100 characters" }
+        val session = ownedSession(profileId, sessionId)
+        if (session.status != "ACTIVE") throw ConflictException("Game is no longer active")
+
+        val inserted = jdbc.sql(
+            """INSERT INTO answer_attempts (id, game_session_id, card_id, profile_id, result, idempotency_key)
+               SELECT :attemptId, c.game_session_id, c.id, :profileId, :result, :key
+               FROM game_session_cards c WHERE c.id = :cardId AND c.game_session_id = :sessionId
+               ON CONFLICT (profile_id, idempotency_key) DO NOTHING"""
+        ).param("attemptId", UUID.randomUUID()).param("profileId", profileId).param("result", result.name)
+            .param("key", idempotencyKey).param("cardId", cardId).param("sessionId", sessionId).update()
+        if (inserted == 0) {
+            val sameRequest = jdbc.sql("SELECT count(*) FROM answer_attempts WHERE profile_id=:profileId AND idempotency_key=:key AND card_id=:cardId AND result=:result")
+                .param("profileId", profileId).param("key", idempotencyKey).param("cardId", cardId).param("result", result.name)
+                .query(Int::class.java).single() == 1
+            if (!sameRequest) throw ConflictException("Idempotency-Key was already used for another answer")
+            return get(profileId, sessionId)
+        }
+
+        val updated = jdbc.sql("UPDATE game_session_cards SET result=:result, answered_at=now() WHERE id=:cardId AND game_session_id=:sessionId AND result IS NULL")
+            .param("result", result.name).param("cardId", cardId).param("sessionId", sessionId).update()
+        if (updated == 0) throw ConflictException("Card is missing or already answered")
+
+        val wordId = jdbc.sql("SELECT word_id FROM game_session_cards WHERE id=:cardId").param("cardId", cardId).query(UUID::class.java).single()
+        jdbc.sql(
+            """INSERT INTO user_progress (id, profile_id, word_id, state, total_attempts, known_attempts, last_played_at)
+               VALUES (:id, :profileId, :wordId, :state, 1, :known, now())
+               ON CONFLICT (profile_id, word_id) DO UPDATE SET state=:state,
+                 total_attempts=user_progress.total_attempts+1,
+                 known_attempts=user_progress.known_attempts+:known,
+                 last_played_at=now(), updated_at=now(), version=user_progress.version+1"""
+        ).param("id", UUID.randomUUID()).param("profileId", profileId).param("wordId", wordId)
+            .param("state", if (result == AnswerResult.KNOWN) "KNOWN" else "DIFFICULT")
+            .param("known", if (result == AnswerResult.KNOWN) 1 else 0).update()
+        outbox("CardAnswered", sessionId, profileId)
+        return get(profileId, sessionId)
+    }
+
+    @Transactional
+    fun finish(profileId: UUID, sessionId: UUID): GameSessionView {
+        ownedSession(profileId, sessionId)
+        jdbc.sql("UPDATE game_sessions SET status='COMPLETED', completed_at=now(), updated_at=now(), version=version+1 WHERE id=:id AND status='ACTIVE'")
+            .param("id", sessionId).update()
+        outbox("GameCompleted", sessionId, profileId)
+        return get(profileId, sessionId)
+    }
+
+    @Transactional
+    fun review(profileId: UUID, sessionId: UUID): GameSessionView {
+        val source = ownedSession(profileId, sessionId)
+        val rootId = source.rootSessionId ?: source.id
+        val words = sessionWords(rootId, "AND c.result = 'DIFFICULT'")
+        if (words.isEmpty()) throw ConflictException("The original game has no difficult words to review")
+        return createSession(profileId, rootId, SessionType.REVIEW, source.direction, Ordering.RANDOM, words)
+    }
+
+    @Transactional
+    fun replay(profileId: UUID, sessionId: UUID): GameSessionView {
+        val source = ownedSession(profileId, sessionId)
+        val rootId = source.rootSessionId ?: source.id
+        val words = sessionWords(rootId, "")
+        return createSession(profileId, rootId, SessionType.REPLAY, source.direction, source.ordering, words)
+    }
+
+    fun get(profileId: UUID, sessionId: UUID): GameSessionView {
+        val session = ownedSession(profileId, sessionId)
+        val cards = jdbc.sql(
+            """SELECT id, word_id, position, german_snapshot, english_snapshot, present_form_snapshot, preterite_form_snapshot, perfect_form_snapshot, result
+               FROM game_session_cards WHERE game_session_id=:sessionId ORDER BY position"""
+        ).param("sessionId", sessionId).query { rs, _ ->
+            val german = rs.getString("german_snapshot")
+            val english = rs.getString("english_snapshot")
+            GameCard(rs.getObject("id", UUID::class.java), rs.getObject("word_id", UUID::class.java), rs.getInt("position"),
+                if (session.direction == Direction.DE_EN) german else english,
+                if (session.direction == Direction.DE_EN) english else german,
+                listOfNotNull(rs.getString("present_form_snapshot"), rs.getString("preterite_form_snapshot"), rs.getString("perfect_form_snapshot")),
+                rs.getString("result")?.let(AnswerResult::valueOf))
+        }.list()
+        val known = cards.count { it.result == AnswerResult.KNOWN }
+        val difficult = cards.count { it.result == AnswerResult.DIFFICULT }
+        return GameSessionView(session.id, session.rootSessionId ?: session.id, session.type, session.status, session.direction,
+            cards, known + difficult, known, difficult, GameRules.accuracy(known, difficult))
+    }
+
+    private fun selectCandidates(profileId: UUID, request: StartGameRequest): List<WordCandidate> {
+        if (request.wordIds.isNotEmpty()) {
+            require(request.wordIds.size <= 100) { "At most 100 exact words may be selected" }
+            return queryWords("w.id IN (:wordIds)", mapOf("wordIds" to request.wordIds))
+        }
+        val clauses = mutableListOf("w.deleted_at IS NULL")
+        val params = mutableMapOf<String, Any>("profileId" to profileId)
+        if (request.categoryIds.isNotEmpty()) {
+            clauses += "EXISTS (SELECT 1 FROM word_categories wc WHERE wc.word_id=w.id AND wc.category_id IN (:categoryIds))"
+            params["categoryIds"] = request.categoryIds
+        }
+        if (request.unseenOnly) clauses += "NOT EXISTS (SELECT 1 FROM user_progress up WHERE up.profile_id=:profileId AND up.word_id=w.id AND up.state <> 'UNSEEN')"
+        return queryWords(clauses.joinToString(" AND "), params)
+    }
+
+    private fun queryWords(condition: String, params: Map<String, Any>): List<WordCandidate> {
+        var query = jdbc.sql("SELECT w.id,w.german,w.english,w.present_form,w.preterite_form,w.perfect_form FROM words w WHERE $condition LIMIT 500")
+        params.forEach { (key, value) -> query = query.param(key, value) }
+        return query.query { rs, _ -> WordCandidate(rs.getObject("id", UUID::class.java), rs.getString("german"), rs.getString("english"),
+            listOfNotNull(rs.getString("present_form"), rs.getString("preterite_form"), rs.getString("perfect_form"))) }.list()
+    }
+
+    private fun createSession(profileId: UUID, rootId: UUID?, type: SessionType, direction: Direction, ordering: Ordering, words: List<WordCandidate>): GameSessionView {
+        require(words.map { it.id }.distinct().size == words.size) { "A deck cannot contain duplicate words" }
+        val id = UUID.randomUUID()
+        jdbc.sql("INSERT INTO game_sessions(id,profile_id,root_session_id,session_type,status,direction,ordering) VALUES(:id,:profileId,:rootId,:type,'ACTIVE',:direction,:ordering)")
+            .param("id", id).param("profileId", profileId).param("rootId", rootId).param("type", type.name)
+            .param("direction", direction.name).param("ordering", ordering.name).update()
+        words.forEachIndexed { index, word ->
+            jdbc.sql("""INSERT INTO game_session_cards(id,game_session_id,word_id,position,german_snapshot,english_snapshot,present_form_snapshot,preterite_form_snapshot,perfect_form_snapshot)
+                VALUES(:id,:sessionId,:wordId,:position,:german,:english,:present,:preterite,:perfect)""")
+                .param("id", UUID.randomUUID()).param("sessionId", id).param("wordId", word.id).param("position", index)
+                .param("german", word.german).param("english", word.english)
+                .param("present", word.forms.getOrNull(0), java.sql.Types.VARCHAR)
+                .param("preterite", word.forms.getOrNull(1), java.sql.Types.VARCHAR)
+                .param("perfect", word.forms.getOrNull(2), java.sql.Types.VARCHAR).update()
+        }
+        outbox("GameStarted", id, profileId)
+        return get(profileId, id)
+    }
+
+    private fun sessionWords(sessionId: UUID, extraCondition: String): List<WordCandidate> = jdbc.sql(
+        """SELECT c.word_id,c.german_snapshot,c.english_snapshot,w.present_form,w.preterite_form,w.perfect_form
+           FROM game_session_cards c JOIN words w ON w.id=c.word_id
+           WHERE c.game_session_id=:sessionId $extraCondition ORDER BY c.position"""
+    ).param("sessionId", sessionId).query { rs, _ -> WordCandidate(rs.getObject("word_id", UUID::class.java),
+        rs.getString("german_snapshot"), rs.getString("english_snapshot"),
+        listOfNotNull(rs.getString("present_form"), rs.getString("preterite_form"), rs.getString("perfect_form"))) }.list()
+
+    private fun ownedSession(profileId: UUID, sessionId: UUID): SessionRow = jdbc.sql(
+        "SELECT id,profile_id,root_session_id,session_type,status,direction,ordering,updated_at FROM game_sessions WHERE id=:id AND profile_id=:profileId"
+    ).param("id", sessionId).param("profileId", profileId).query { rs, _ -> SessionRow(
+        rs.getObject("id", UUID::class.java), rs.getObject("profile_id", UUID::class.java),
+        rs.getObject("root_session_id", UUID::class.java), SessionType.valueOf(rs.getString("session_type")),
+        rs.getString("status"), Direction.valueOf(rs.getString("direction")), Ordering.valueOf(rs.getString("ordering")),
+        rs.getTimestamp("updated_at").toInstant()) }.optional().orElseThrow { NotFoundException("Game not found") }
+
+    private fun outbox(type: String, aggregateId: UUID, profileId: UUID) {
+        val correlation = runCatching { UUID.fromString(MDC.get("correlation_id")) }.getOrElse { UUID.randomUUID() }
+        jdbc.sql("""INSERT INTO outbox_events(event_id,event_type,event_version,aggregate_id,user_id,occurred_at,correlation_id,payload)
+                    VALUES(:id,:type,1,:aggregateId,:profileId,now(),:correlation,jsonb_build_object('session_id',:aggregateId,'profile_id',:profileId))""")
+            .param("id", UUID.randomUUID()).param("type", type).param("aggregateId", aggregateId)
+            .param("profileId", profileId).param("correlation", correlation).update()
+    }
+}

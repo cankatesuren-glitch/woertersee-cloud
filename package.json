@@ -1,0 +1,12 @@
+{
+  "name": "woertersee-cloud",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "legacy:validate": "tsx tools/export-legacy-seed.ts --dry-run",
+    "legacy:export": "tsx tools/export-legacy-seed.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5"
+  }
+}

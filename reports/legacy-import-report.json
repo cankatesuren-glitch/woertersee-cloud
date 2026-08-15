@@ -1,0 +1,9 @@
+{
+  "sourceRows": 1915,
+  "uniqueWords": 1809,
+  "duplicateRowsMerged": 106,
+  "categories": 21,
+  "missingEnglish": [],
+  "irregularWordsWithoutForms": [],
+  "dryRun": false
+}

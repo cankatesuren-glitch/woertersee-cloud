@@ -1,0 +1,62 @@
+services:
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/woertersee
+      DATABASE_USER: woertersee
+      DATABASE_PASSWORD: local-only
+      OIDC_ISSUER_URI: http://localhost:8081/realms/woertersee
+      OIDC_JWK_SET_URI: http://keycloak:8080/realms/woertersee/protocol/openid-connect/certs
+      LEGACY_SEED_ENABLED: "true"
+    ports: ["8080:8080"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build: ./web
+    environment:
+      API_BASE_URL: http://api:8080
+      AUTH_SECRET: local-auth-secret-replace-outside-development
+      AUTH_KEYCLOAK_ID: woertersee-web
+      AUTH_KEYCLOAK_SECRET: local-development-only
+      AUTH_KEYCLOAK_ISSUER: http://localhost:8081/realms/woertersee
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: local-admin-only
+      KC_HOSTNAME: http://localhost:8081
+    ports: ["8081:8080"]
+    volumes:
+      - ./keycloak/woertersee-realm.json:/opt/keycloak/data/import/woertersee-realm.json:ro
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: woertersee
+      POSTGRES_USER: woertersee
+      POSTGRES_PASSWORD: local-only
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U woertersee"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+
+  redis:
+    image: redis:7.4-alpine
+    ports: ["6379:6379"]
+
+  redpanda:
+    image: redpandadata/redpanda:v24.3.18
+    command: ["redpanda", "start", "--overprovisioned", "--smp", "1", "--memory", "512M", "--reserve-memory", "0M", "--node-id", "0", "--check=false", "--kafka-addr", "0.0.0.0:9092", "--advertise-kafka-addr", "redpanda:9092"]
+    ports: ["9092:9092"]
+
+volumes:
+  postgres-data:

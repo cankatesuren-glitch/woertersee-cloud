@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: woertersee-api
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/woertersee}
+    username: ${DATABASE_USER:woertersee}
+    password: ${DATABASE_PASSWORD:local-only}
+  flyway:
+    locations: classpath:db/migration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8081/realms/woertersee}
+          jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8081/realms/woertersee/protocol/openid-connect/certs}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+server:
+  shutdown: graceful
+woertersee:
+  seed:
+    legacy: ${LEGACY_SEED_ENABLED:false}
