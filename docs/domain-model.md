@@ -8,4 +8,8 @@ Answer attempts have both a unique card constraint and an owner-scoped idempoten
 
 Personal words belong to exactly one profile. Every read and mutation is owner-scoped, updates use an optimistic version, and deletion is soft. A partial unique index prevents active duplicates while allowing a deleted word to be created again.
 
+Game cards reference exactly one source: a global word or an owner-scoped personal word. Both are copied into immutable card snapshots. Personal-word answers update a separate owner-scoped progress table, while review and replay continue to derive from the original snapshot.
+
 Feedback belongs to its submitting profile and moves through `OPEN`, `IN_REVIEW`, `RESOLVED` or `REJECTED`. Administrative state changes produce immutable audit entries.
+
+Progress resets require an explicit confirmation flag, execute inside one transaction and record the reset type plus affected-row count in the audit log.

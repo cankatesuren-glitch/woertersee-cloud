@@ -2,7 +2,7 @@ const chapters = ["Kapitel 1", "Kapitel 2", "Kapitel 3", "Irregular verbs"];
 
 export default function Home() {
   return <main>
-    <nav><a className="brand" href="#">Wörter<span>See</span></a><div className="navlinks"><a href="#decks">Decks</a><a href="/words">My words</a><a href="/feedback">Feedback</a><a href="/play">Play</a></div></nav>
+    <nav><a className="brand" href="#">Wörter<span>See</span></a><div className="navlinks"><a href="/words">My words</a><a href="/feedback">Feedback</a><a href="/settings">Settings</a><a href="/play">Play</a></div></nav>
     <section className="hero">
       <p className="eyebrow">YOUR DAILY GERMAN PRACTICE</p>
       <h1>Words become familiar<br/><em>one card at a time.</em></h1>

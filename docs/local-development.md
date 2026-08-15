@@ -24,3 +24,5 @@ All gameplay endpoints require a valid OIDC access token.
 ## Local sign-in
 
 Keycloak is available at `http://localhost:8081`. The imported development-only learner is `demo` with password `local-demo-only`. These credentials and client secrets are intentionally scoped to the disposable local realm and must never be reused outside local development.
+
+The disposable admin account is `admin` with password `local-admin-only`. It has both `USER` and `ADMIN` realm roles and exists only to exercise the local administration flow.

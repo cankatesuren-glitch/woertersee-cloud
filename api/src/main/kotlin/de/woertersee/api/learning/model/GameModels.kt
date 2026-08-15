@@ -12,6 +12,7 @@ enum class SessionType { ORIGINAL, REVIEW, REPLAY }
 
 data class StartGameRequest(
     val wordIds: Set<UUID> = emptySet(),
+    val personalWordIds: Set<UUID> = emptySet(),
     val categoryIds: Set<UUID> = emptySet(),
     @field:Min(1) @field:Max(100) val cardCount: Int = 10,
     val unseenOnly: Boolean = false,
@@ -24,6 +25,7 @@ data class AnswerCardRequest(val result: AnswerResult)
 data class GameCard(
     val id: UUID,
     val wordId: UUID,
+    val source: String,
     val position: Int,
     val front: String,
     val back: String,
@@ -44,7 +46,7 @@ data class GameSessionView(
     val accuracy: Double?
 )
 
-data class WordCandidate(val id: UUID, val german: String, val english: String, val forms: List<String>)
+data class WordCandidate(val id: UUID, val source: String, val german: String, val english: String, val forms: List<String>)
 
 data class SessionRow(
     val id: UUID,
@@ -56,4 +58,3 @@ data class SessionRow(
     val ordering: Ordering,
     val updatedAt: Instant
 )
-
