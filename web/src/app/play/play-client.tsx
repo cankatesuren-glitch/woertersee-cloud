@@ -235,7 +235,14 @@ export default function PlayClient({ userName }: { userName: string }) {
           {index + 1} / {game.cards.length}
         </span>
       </header>
-      <div className="progress">
+      <div
+        className="progress"
+        role="progressbar"
+        aria-label="Deck progress"
+        aria-valuemin={0}
+        aria-valuemax={game.cards.length}
+        aria-valuenow={index}
+      >
         <i
           style={{
             width: `${((index + (current?.result ? 1 : 0)) / game.cards.length) * 100}%`,
@@ -243,13 +250,14 @@ export default function PlayClient({ userName }: { userName: string }) {
         />
       </div>
       <section className="card-stage">
-        <div
+        <button
+          type="button"
           className="word-card"
           onClick={() => setRevealed(true)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(event) =>
-            (event.key === "Enter" || event.key === " ") && setRevealed(true)
+          aria-label={
+            revealed
+              ? `Translation: ${current?.back}`
+              : `Reveal translation for ${current?.front}`
           }
         >
           <p>
@@ -264,7 +272,7 @@ export default function PlayClient({ userName }: { userName: string }) {
             <span>{current.forms.join(" · ")}</span>
           ) : null}
           <small>{revealed ? "How did that feel?" : "Tap to reveal"}</small>
-        </div>
+        </button>
         {current?.source === "GLOBAL" && (
           <button className="finish" onClick={report}>
             Report this word
@@ -338,21 +346,27 @@ function DeckBuilder(props: BuilderProps) {
         <div className="builder-intro">
           <p className="eyebrow">BUILD A DECK</p>
           <h1>What do you want to practise?</h1>
-          <div className="mode-tabs">
+          <div className="mode-tabs" role="tablist" aria-label="Deck type">
             <button
               className={props.mode === "quick" ? "active" : ""}
+              role="tab"
+              aria-selected={props.mode === "quick"}
               onClick={() => props.setMode("quick")}
             >
               Quick play
             </button>
             <button
               className={props.mode === "category" ? "active" : ""}
+              role="tab"
+              aria-selected={props.mode === "category"}
               onClick={() => props.setMode("category")}
             >
               Categories
             </button>
             <button
               className={props.mode === "words" ? "active" : ""}
+              role="tab"
+              aria-selected={props.mode === "words"}
               onClick={() => props.setMode("words")}
             >
               Pick words
