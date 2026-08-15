@@ -12,4 +12,6 @@ Game cards reference exactly one source: a global word or an owner-scoped person
 
 Feedback belongs to its submitting profile and moves through `OPEN`, `IN_REVIEW`, `RESOLVED` or `REJECTED`. Administrative state changes produce immutable audit entries.
 
+Global words use optimistic versions and soft deletion. Their category relations are replaced transactionally after all supplied category ids have been validated. Word changes also create versioned `WordCorrected` outbox events.
+
 Progress resets require an explicit confirmation flag, execute inside one transaction and record the reset type plus affected-row count in the audit log.
