@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import PwaRegistration from "./pwa-registration";
 import "./globals.css";
 import "./pwa.css";
+import "./accessibility.css";
 
 export const metadata: Metadata = {
   title: "WörterSee — German vocabulary that stays",
@@ -24,7 +25,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <a className="skip-link" href="#main-content">
+          Skip to main content
+        </a>
+        <div id="main-content" tabIndex={-1}>
+          {children}
+        </div>
         <PwaRegistration />
       </body>
     </html>

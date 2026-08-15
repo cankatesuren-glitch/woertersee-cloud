@@ -26,3 +26,18 @@ All gameplay endpoints require a valid OIDC access token.
 Keycloak is available at `http://localhost:8081`. The imported development-only learner is `demo` with password `local-demo-only`. These credentials and client secrets are intentionally scoped to the disposable local realm and must never be reused outside local development.
 
 The disposable admin account is `admin` with password `local-admin-only`. It has both `USER` and `ADMIN` realm roles and exists only to exercise the local administration flow.
+
+## Browser tests
+
+Install Chromium once with `npx playwright install chromium`, then build and run the public-page accessibility checks from `web`:
+
+```sh
+npm run build
+npm run test:e2e
+```
+
+The complete sign-in and learning journey needs the Docker Compose stack. With the site available at `http://127.0.0.1:3000`, run:
+
+```sh
+E2E_BASE_URL=http://127.0.0.1:3000 E2E_FULL_STACK=true npm run test:e2e
+```

@@ -8,7 +8,7 @@ export default async function Home() {
   const session = await auth();
   return (
     <main>
-      <nav>
+      <nav aria-label="Primary navigation">
         <a className="brand" href="#">
           Wörter<span>See</span>
         </a>
@@ -66,11 +66,11 @@ export default async function Home() {
         </div>
         <div className="chapters">
           {chapters.map((chapter, index) => (
-            <button key={chapter}>
+            <a href="/play" key={chapter}>
               <span>0{index + 1}</span>
               {chapter}
               <b>→</b>
-            </button>
+            </a>
           ))}
         </div>
       </section>
