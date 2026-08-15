@@ -11,3 +11,5 @@ Personal-word updates require an `If-Match` version. Deletes are soft deletes, a
 Personal-word deck selection filters every requested id by the authenticated profile. Progress reset operations require explicit confirmation and write an audit record in the same transaction.
 
 Development credentials under `keycloak/` are disposable local values and must not be reused. Production secrets belong in a secret manager.
+
+Admin audit records are available through `GET /api/v1/admin/audit-logs`. The endpoint is read-only, role-protected, paginated, and supports exact filters for action, target type, and actor profile. Correlation IDs connect an administrative change to the originating request without exposing access tokens or identity-provider claims.

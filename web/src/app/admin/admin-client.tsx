@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
+import AuditLogPanel from "./audit-log-panel";
 type Category = {
   id: string;
   name: string;
@@ -240,6 +241,7 @@ export default function AdminClient() {
           ))}
         </div>
       </section>
+      <AuditLogPanel />
     </main>
   );
 }
