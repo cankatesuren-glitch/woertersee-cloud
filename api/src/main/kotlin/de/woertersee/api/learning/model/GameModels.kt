@@ -30,7 +30,8 @@ data class GameCard(
     val front: String,
     val back: String,
     val forms: List<String>,
-    val result: AnswerResult?
+    val result: AnswerResult?,
+    val nextReviewAt: Instant?,
 )
 
 data class GameSessionView(

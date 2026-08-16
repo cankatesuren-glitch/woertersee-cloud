@@ -533,6 +533,13 @@
             "format": "uuid",
             "type": "string"
           },
+          "nextReviewAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "position": {
             "format": "int32",
             "type": "integer"

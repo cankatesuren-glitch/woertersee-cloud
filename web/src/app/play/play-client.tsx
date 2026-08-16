@@ -12,6 +12,7 @@ type Card = {
   back: string;
   forms: string[];
   result: "KNOWN" | "DIFFICULT" | null;
+  nextReviewAt: string | null;
 };
 type Game = {
   id: string;
@@ -40,7 +41,7 @@ export default function PlayClient({ userName }: { userName: string }) {
   const [cardCount, setCardCount] = useState(10);
   const [direction, setDirection] = useState("DE_EN");
   const [ordering, setOrdering] = useState("RANDOM");
-  const [unseenOnly, setUnseenOnly] = useState(true);
+  const [unseenOnly, setUnseenOnly] = useState(false);
 
   useEffect(() => {
     const session = new URLSearchParams(location.search).get("session");
@@ -121,6 +122,8 @@ export default function PlayClient({ userName }: { userName: string }) {
     const body = await response.json();
     if (!response.ok)
       return setError(body.detail ?? "Could not save the answer.");
+    const answeredCard = body.cards.find((card: Card) => card.id === current.id);
+    setNotice(reviewMessage(result, answeredCard?.nextReviewAt));
     setGame(body);
     setRevealed(false);
     if (index < body.cards.length - 1) setIndex(index + 1);
@@ -384,17 +387,26 @@ function DeckBuilder(props: BuilderProps) {
         </div>
         <div className="builder-content">
           {props.mode === "quick" && (
-            <label className="choice">
-              <input
-                type="checkbox"
-                checked={props.unseenOnly}
-                onChange={(event) => props.setUnseenOnly(event.target.checked)}
-              />
-              <span>
-                <strong>Only unseen words</strong>
-                <small>Keep the deck focused on new material.</small>
-              </span>
-            </label>
+            <div className="smart-deck">
+              <div>
+                <span aria-hidden="true">↻</span>
+                <p>
+                  <strong>Smart review mix</strong>
+                  <small>Words due today come first, followed by new material.</small>
+                </p>
+              </div>
+              <label className="choice">
+                <input
+                  type="checkbox"
+                  checked={props.unseenOnly}
+                  onChange={(event) => props.setUnseenOnly(event.target.checked)}
+                />
+                <span>
+                  <strong>New words only</strong>
+                  <small>Skip scheduled reviews for this deck.</small>
+                </span>
+              </label>
+            </div>
           )}
           {props.mode === "category" && (
             <div className="choice-list">
@@ -507,4 +519,14 @@ function DeckBuilder(props: BuilderProps) {
       </section>
     </main>
   );
+}
+
+function reviewMessage(result: "KNOWN" | "DIFFICULT", nextReviewAt?: string | null) {
+  if (!nextReviewAt) return "Your review schedule was updated.";
+  if (result === "DIFFICULT") return "Noted — this word will return in about 10 minutes.";
+  const days = Math.max(
+    1,
+    Math.round((new Date(nextReviewAt).getTime() - Date.now()) / 86_400_000),
+  );
+  return `Nice — this word is scheduled again in ${days} day${days === 1 ? "" : "s"}.`;
 }

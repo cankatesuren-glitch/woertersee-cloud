@@ -7,6 +7,7 @@ import org.slf4j.MDC
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -17,7 +18,7 @@ class GameService(private val jdbc: JdbcClient) {
         require(candidates.isNotEmpty()) { "No eligible words found" }
         val ordered = when (request.ordering) {
             Ordering.AZ -> candidates.sortedBy { it.german.lowercase() }
-            Ordering.RANDOM -> candidates.shuffled()
+            Ordering.RANDOM -> candidates
         }.take(request.cardCount)
         return createSession(profileId, null, SessionType.ORIGINAL, request.direction, request.ordering, ordered)
     }
@@ -47,28 +48,45 @@ class GameService(private val jdbc: JdbcClient) {
             .param("result", result.name).param("cardId", cardId).param("sessionId", sessionId).update()
         if (updated == 0) throw ConflictException("Card is missing or already answered")
 
-        val sourceIds = jdbc.sql("SELECT word_id,personal_word_id FROM game_session_cards WHERE id=:cardId")
-            .param("cardId",cardId).query { rs, _ -> rs.getObject("word_id",UUID::class.java) to rs.getObject("personal_word_id",UUID::class.java) }.single()
-        sourceIds.first?.let { wordId -> jdbc.sql(
-            """INSERT INTO user_progress (id, profile_id, word_id, state, total_attempts, known_attempts, last_played_at)
-               VALUES (:id, :profileId, :wordId, :state, 1, :known, now())
+        val source = jdbc.sql(
+            """SELECT c.word_id,c.personal_word_id,
+                      COALESCE(up.consecutive_known,pwp.consecutive_known,0) AS consecutive_known
+               FROM game_session_cards c
+               LEFT JOIN user_progress up ON up.profile_id=:profileId AND up.word_id=c.word_id
+               LEFT JOIN personal_word_progress pwp ON pwp.profile_id=:profileId AND pwp.personal_word_id=c.personal_word_id
+               WHERE c.id=:cardId"""
+        ).param("profileId",profileId).param("cardId",cardId).query { rs, _ -> ProgressSource(
+            rs.getObject("word_id",UUID::class.java),
+            rs.getObject("personal_word_id",UUID::class.java),
+            rs.getInt("consecutive_known"),
+        ) }.single()
+        val plan = ReviewScheduler.schedule(result, source.consecutiveKnown, Instant.now())
+        source.globalWordId?.let { wordId -> jdbc.sql(
+            """INSERT INTO user_progress (id, profile_id, word_id, state, total_attempts, known_attempts, last_played_at, consecutive_known, review_interval_minutes, next_review_at)
+               VALUES (:id, :profileId, :wordId, :state, 1, :known, now(), :streak, :interval, CAST(:nextReviewAt AS timestamptz))
                ON CONFLICT (profile_id, word_id) DO UPDATE SET state=:state,
                  total_attempts=user_progress.total_attempts+1,
                  known_attempts=user_progress.known_attempts+:known,
-                 last_played_at=now(), updated_at=now(), version=user_progress.version+1"""
+                 last_played_at=now(), consecutive_known=:streak, review_interval_minutes=:interval,
+                 next_review_at=CAST(:nextReviewAt AS timestamptz), updated_at=now(), version=user_progress.version+1"""
         ).param("id", UUID.randomUUID()).param("profileId", profileId).param("wordId", wordId)
             .param("state", if (result == AnswerResult.KNOWN) "KNOWN" else "DIFFICULT")
-            .param("known", if (result == AnswerResult.KNOWN) 1 else 0).update() }
-        sourceIds.second?.let { wordId -> jdbc.sql(
-            """INSERT INTO personal_word_progress(id,profile_id,personal_word_id,state,total_attempts,known_attempts,last_played_at)
-               VALUES(:id,:profileId,:wordId,:state,1,:known,now())
+            .param("known", if (result == AnswerResult.KNOWN) 1 else 0)
+            .param("streak",plan.consecutiveKnown).param("interval",plan.interval.toMinutes())
+            .param("nextReviewAt",plan.nextReviewAt.toString()).update() }
+        source.personalWordId?.let { wordId -> jdbc.sql(
+            """INSERT INTO personal_word_progress(id,profile_id,personal_word_id,state,total_attempts,known_attempts,last_played_at,consecutive_known,review_interval_minutes,next_review_at)
+               VALUES(:id,:profileId,:wordId,:state,1,:known,now(),:streak,:interval,CAST(:nextReviewAt AS timestamptz))
                ON CONFLICT(profile_id,personal_word_id) DO UPDATE SET state=:state,
                  total_attempts=personal_word_progress.total_attempts+1,
                  known_attempts=personal_word_progress.known_attempts+:known,
-                 last_played_at=now(),updated_at=now(),version=personal_word_progress.version+1"""
+                 last_played_at=now(),consecutive_known=:streak,review_interval_minutes=:interval,
+                 next_review_at=CAST(:nextReviewAt AS timestamptz),updated_at=now(),version=personal_word_progress.version+1"""
         ).param("id",UUID.randomUUID()).param("profileId",profileId).param("wordId",wordId)
             .param("state",if(result==AnswerResult.KNOWN)"KNOWN" else "DIFFICULT")
-            .param("known",if(result==AnswerResult.KNOWN)1 else 0).update() }
+            .param("known",if(result==AnswerResult.KNOWN)1 else 0)
+            .param("streak",plan.consecutiveKnown).param("interval",plan.interval.toMinutes())
+            .param("nextReviewAt",plan.nextReviewAt.toString()).update() }
         outbox("CardAnswered", sessionId, profileId)
         return get(profileId, sessionId)
     }
@@ -102,9 +120,14 @@ class GameService(private val jdbc: JdbcClient) {
     fun get(profileId: UUID, sessionId: UUID): GameSessionView {
         val session = ownedSession(profileId, sessionId)
         val cards = jdbc.sql(
-            """SELECT id, word_id, personal_word_id, position, german_snapshot, english_snapshot, present_form_snapshot, preterite_form_snapshot, perfect_form_snapshot, result
-               FROM game_session_cards WHERE game_session_id=:sessionId ORDER BY position"""
-        ).param("sessionId", sessionId).query { rs, _ ->
+            """SELECT c.id, c.word_id, c.personal_word_id, c.position, c.german_snapshot, c.english_snapshot,
+                      c.present_form_snapshot, c.preterite_form_snapshot, c.perfect_form_snapshot, c.result,
+                      COALESCE(up.next_review_at,pwp.next_review_at) AS next_review_at
+               FROM game_session_cards c
+               LEFT JOIN user_progress up ON up.profile_id=:profileId AND up.word_id=c.word_id
+               LEFT JOIN personal_word_progress pwp ON pwp.profile_id=:profileId AND pwp.personal_word_id=c.personal_word_id
+               WHERE c.game_session_id=:sessionId ORDER BY c.position"""
+        ).param("profileId",profileId).param("sessionId", sessionId).query { rs, _ ->
             val german = rs.getString("german_snapshot")
             val english = rs.getString("english_snapshot")
             val globalId=rs.getObject("word_id",UUID::class.java)
@@ -113,7 +136,8 @@ class GameService(private val jdbc: JdbcClient) {
                 if (session.direction == Direction.DE_EN) german else english,
                 if (session.direction == Direction.DE_EN) english else german,
                 listOfNotNull(rs.getString("present_form_snapshot"), rs.getString("preterite_form_snapshot"), rs.getString("perfect_form_snapshot")),
-                rs.getString("result")?.let(AnswerResult::valueOf))
+                rs.getString("result")?.let(AnswerResult::valueOf),
+                rs.getTimestamp("next_review_at")?.toInstant())
         }.list()
         val known = cards.count { it.result == AnswerResult.KNOWN }
         val difficult = cards.count { it.result == AnswerResult.DIFFICULT }
@@ -125,7 +149,7 @@ class GameService(private val jdbc: JdbcClient) {
         val exact=mutableListOf<WordCandidate>()
         if (request.wordIds.isNotEmpty()) {
             require(request.wordIds.size <= 100) { "At most 100 exact words may be selected" }
-            exact += queryWords("w.id IN (:wordIds)", mapOf("wordIds" to request.wordIds))
+            exact += queryWords("w.id IN (:wordIds)", mapOf("wordIds" to request.wordIds, "profileId" to profileId))
         }
         if(request.personalWordIds.isNotEmpty()){
             require(request.personalWordIds.size<=100){"At most 100 personal words may be selected"}
@@ -140,12 +164,23 @@ class GameService(private val jdbc: JdbcClient) {
             clauses += "EXISTS (SELECT 1 FROM word_categories wc WHERE wc.word_id=w.id AND wc.category_id IN (:categoryIds))"
             params["categoryIds"] = request.categoryIds
         }
-        if (request.unseenOnly) clauses += "NOT EXISTS (SELECT 1 FROM user_progress up WHERE up.profile_id=:profileId AND up.word_id=w.id AND up.state <> 'UNSEEN')"
+        if (request.unseenOnly) clauses += "(up.id IS NULL OR up.state='UNSEEN')"
         return queryWords(clauses.joinToString(" AND "), params)
     }
 
     private fun queryWords(condition: String, params: Map<String, Any>): List<WordCandidate> {
-        var query = jdbc.sql("SELECT w.id,w.german,w.english,w.present_form,w.preterite_form,w.perfect_form FROM words w WHERE $condition LIMIT 500")
+        var query = jdbc.sql(
+            """SELECT w.id,w.german,w.english,w.present_form,w.preterite_form,w.perfect_form
+               FROM words w
+               LEFT JOIN user_progress up ON up.profile_id=:profileId AND up.word_id=w.id
+               WHERE $condition
+               ORDER BY CASE
+                   WHEN up.next_review_at <= now() THEN 0
+                   WHEN up.id IS NULL OR up.state='UNSEEN' THEN 1
+                   ELSE 2
+               END, up.next_review_at NULLS FIRST, random()
+               LIMIT 500"""
+        )
         params.forEach { (key, value) -> query = query.param(key, value) }
         return query.query { rs, _ -> WordCandidate(rs.getObject("id", UUID::class.java), "GLOBAL", rs.getString("german"), rs.getString("english"),
             listOfNotNull(rs.getString("present_form"), rs.getString("preterite_form"), rs.getString("perfect_form"))) }.list()
@@ -197,3 +232,9 @@ class GameService(private val jdbc: JdbcClient) {
             .param("profileId", profileId).param("correlation", correlation).update()
     }
 }
+
+private data class ProgressSource(
+    val globalWordId: UUID?,
+    val personalWordId: UUID?,
+    val consecutiveKnown: Int,
+)
