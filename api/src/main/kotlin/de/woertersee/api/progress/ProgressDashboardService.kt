@@ -7,7 +7,10 @@ import java.time.ZoneOffset
 import java.util.UUID
 
 @Service
-class ProgressDashboardService(private val jdbc: JdbcClient) {
+class ProgressDashboardService(
+    private val jdbc: JdbcClient,
+    private val activity: LearningActivityQuery,
+) {
     fun get(profileId: UUID): ProgressDashboard {
         val totals = jdbc.sql(
             """SELECT count(*) AS explored,
@@ -50,7 +53,13 @@ class ProgressDashboardService(private val jdbc: JdbcClient) {
             ProgressStreak.calculate(practiceDates, LocalDate.now(ZoneOffset.UTC)),
             totals.lastPractisedAt,
         )
-        return ProgressDashboard(summary, activeGame(profileId), recentGames(profileId), difficultWords(profileId))
+        return ProgressDashboard(
+            summary,
+            activity.get(profileId),
+            activeGame(profileId),
+            recentGames(profileId),
+            difficultWords(profileId),
+        )
     }
 
     private fun activeGame(profileId: UUID): ActiveGameSummary? = jdbc.sql(

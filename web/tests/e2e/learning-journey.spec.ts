@@ -26,4 +26,8 @@ test("learner signs in, completes a deck and sees results", async ({
   await expect(page.getByText("SESSION COMPLETE")).toBeVisible();
   await page.goto("/");
   await expect(page.getByText("games completed")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your practice rhythm" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "7 days" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "30 days" }).click();
+  await expect(page.getByRole("button", { name: "30 days" })).toHaveAttribute("aria-pressed", "true");
 });

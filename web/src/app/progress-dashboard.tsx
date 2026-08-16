@@ -1,36 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import type { components } from "@/lib/api/schema";
 
-type Dashboard = {
-  summary: {
-    exploredWords: number;
-    knownWords: number;
-    difficultWords: number;
-    accuracy: number | null;
-    completedGames: number;
-    currentStreakDays: number;
-    lastPractisedAt: string | null;
-  };
-  activeGame: { id: string; answeredCards: number; totalCards: number } | null;
-  recentGames: {
-    id: string;
-    type: string;
-    completedAt: string;
-    totalCards: number;
-    accuracy: number | null;
-  }[];
-  difficultWords: {
-    id: string;
-    source: "GLOBAL" | "PERSONAL";
-    german: string;
-    english: string;
-  }[];
-};
+type Dashboard = components["schemas"]["ProgressDashboard"];
 
 export default function ProgressDashboard() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
+  const [activityPeriod, setActivityPeriod] = useState<7 | 30>(7);
 
   useEffect(() => {
     fetch("/api/progress")
@@ -43,13 +21,16 @@ export default function ProgressDashboard() {
   }, []);
 
   async function practiseDifficult() {
-    if (!dashboard?.difficultWords.length) return;
-    const global = dashboard.difficultWords
+    const difficultWords = dashboard?.difficultWords ?? [];
+    if (!difficultWords.length) return;
+    const global = difficultWords
       .filter((word) => word.source === "GLOBAL")
-      .map((word) => word.id);
-    const personal = dashboard.difficultWords
+      .map((word) => word.id)
+      .filter((id): id is string => Boolean(id));
+    const personal = difficultWords
       .filter((word) => word.source === "PERSONAL")
-      .map((word) => word.id);
+      .map((word) => word.id)
+      .filter((id): id is string => Boolean(id));
     const response = await fetch("/api/games", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -78,7 +59,26 @@ export default function ProgressDashboard() {
         Loading your progress…
       </section>
     );
-  const { summary } = dashboard;
+  const summary = dashboard.summary;
+  const activityDays = (dashboard.activity?.days ?? [])
+    .filter((day): day is typeof day & { date: string } => Boolean(day.date))
+    .slice(-activityPeriod);
+  const difficultWords = dashboard.difficultWords ?? [];
+  const recentGames = dashboard.recentGames ?? [];
+  const activityStarted = activityDays.reduce(
+    (total, day) => total + (day.gamesStarted ?? 0),
+    0,
+  );
+  const activityCompleted = activityDays.reduce(
+    (total, day) => total + (day.gamesCompleted ?? 0),
+    0,
+  );
+  const activityMaximum = Math.max(
+    1,
+    ...activityDays.map((day) =>
+      Math.max(day.gamesStarted ?? 0, day.gamesCompleted ?? 0),
+    ),
+  );
 
   return (
     <section className="dashboard">
@@ -87,90 +87,143 @@ export default function ProgressDashboard() {
           <p className="eyebrow">YOUR PROGRESS</p>
           <h2>Keep the rhythm going.</h2>
           <p>
-            {summary.lastPractisedAt
+            {summary?.lastPractisedAt
               ? `Last practice ${new Date(summary.lastPractisedAt).toLocaleDateString()}`
               : "Complete your first card to start tracking progress."}
           </p>
         </div>
-        {dashboard.activeGame && (
+        {dashboard.activeGame?.id && (
           <a
             className="primary"
             href={`/play?session=${dashboard.activeGame.id}`}
           >
-            Resume {dashboard.activeGame.answeredCards}/
-            {dashboard.activeGame.totalCards} →
+            Resume {dashboard.activeGame.answeredCards ?? 0}/
+            {dashboard.activeGame.totalCards ?? 0} →
           </a>
         )}
       </div>
       <div className="metric-grid">
         <article>
-          <strong>{summary.exploredWords}</strong>
+          <strong>{summary?.exploredWords ?? 0}</strong>
           <span>words explored</span>
         </article>
         <article>
-          <strong>{summary.knownWords}</strong>
+          <strong>{summary?.knownWords ?? 0}</strong>
           <span>known words</span>
         </article>
         <article>
-          <strong>{summary.difficultWords}</strong>
+          <strong>{summary?.difficultWords ?? 0}</strong>
           <span>difficult words</span>
         </article>
         <article>
           <strong>
-            {summary.accuracy === null
+            {summary?.accuracy == null
               ? "—"
               : `${summary.accuracy.toFixed(0)}%`}
           </strong>
           <span>overall accuracy</span>
         </article>
         <article>
-          <strong>{summary.completedGames}</strong>
+          <strong>{summary?.completedGames ?? 0}</strong>
           <span>games completed</span>
         </article>
         <article>
-          <strong>{summary.currentStreakDays}</strong>
+          <strong>{summary?.currentStreakDays ?? 0}</strong>
           <span>day streak</span>
         </article>
       </div>
+      <section className="activity-panel" aria-labelledby="activity-title">
+        <div className="activity-heading">
+          <div>
+            <p className="eyebrow">LEARNING ACTIVITY</p>
+            <h3 id="activity-title">Your practice rhythm</h3>
+            <p>
+              {activityStarted} games started · {activityCompleted} completed
+            </p>
+          </div>
+          <div className="activity-period" aria-label="Activity period">
+            {[7, 30].map((period) => (
+              <button
+                aria-pressed={activityPeriod === period}
+                className={activityPeriod === period ? "selected" : ""}
+                key={period}
+                onClick={() => setActivityPeriod(period as 7 | 30)}
+                type="button"
+              >
+                {period} days
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="activity-chart" aria-label={`${activityPeriod} day game activity`}>
+          {activityDays.map((day) => (
+            <div className="activity-day" key={day.date}>
+              <div className="activity-bars">
+                <span
+                  className="started"
+                  style={{ "--bar-size": (day.gamesStarted ?? 0) / activityMaximum } as CSSProperties}
+                />
+                <span
+                  className="completed"
+                  style={{ "--bar-size": (day.gamesCompleted ?? 0) / activityMaximum } as CSSProperties}
+                />
+              </div>
+              <time dateTime={day.date}>
+                {new Date(`${day.date}T00:00:00Z`).toLocaleDateString(undefined, {
+                  day: "numeric",
+                  month: activityPeriod === 7 ? "short" : undefined,
+                })}
+              </time>
+              <span className="sr-only">
+                {day.gamesStarted ?? 0} started, {day.gamesCompleted ?? 0} completed
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="activity-legend">
+          <span><i className="started" /> Started</span>
+          <span><i className="completed" /> Completed</span>
+        </div>
+      </section>
       <div className="dashboard-columns">
         <div>
           <h3>Recent games</h3>
           <div className="recent-list">
-            {dashboard.recentGames.map((game) => (
-              <a href={`/play?session=${game.id}`} key={game.id}>
+            {recentGames.map((game) => (
+              <a href={`/play?session=${game.id}`} key={game.id ?? game.completedAt}>
                 <span>
-                  <strong>{game.type.toLowerCase()}</strong>
+                  <strong>{(game.type ?? "game").toLowerCase()}</strong>
                   <small>
-                    {new Date(game.completedAt).toLocaleDateString()} ·{" "}
-                    {game.totalCards} cards
+                    {new Date(game.completedAt ?? 0).toLocaleDateString()} ·{" "}
+                    {game.totalCards ?? 0} cards
                   </small>
                 </span>
                 <b>
-                  {game.accuracy === null
+                  {game.accuracy == null
                     ? "—"
                     : `${game.accuracy.toFixed(0)}%`}
                 </b>
               </a>
             ))}
-            {!dashboard.recentGames.length && <p>No completed games yet.</p>}
+            {!recentGames.length && <p>No completed games yet.</p>}
           </div>
         </div>
         <div>
           <h3>Difficult words</h3>
           <div className="difficult-list">
-            {dashboard.difficultWords.slice(0, 5).map((word) => (
+            {difficultWords.slice(0, 5).map((word) => (
               <span key={`${word.source}-${word.id}`}>
                 <strong>{word.german}</strong>
                 <small>{word.english}</small>
               </span>
             ))}
-            {!dashboard.difficultWords.length && (
+            {!difficultWords.length && (
               <p>No difficult words right now.</p>
             )}
           </div>
           <button
             className="secondary"
-            disabled={!dashboard.difficultWords.length}
+            disabled={!difficultWords.length}
             onClick={practiseDifficult}
           >
             Practise difficult words

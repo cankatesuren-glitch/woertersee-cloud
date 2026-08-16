@@ -569,6 +569,46 @@
         },
         "type": "object"
       },
+      "LearningActivity": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/LearningActivityDay"
+            },
+            "type": "array"
+          },
+          "gamesCompleted": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "gamesStarted": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "periodDays": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "LearningActivityDay": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "gamesCompleted": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "gamesStarted": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "PersonalWordRequest": {
         "properties": {
           "category": {
@@ -636,6 +676,9 @@
                 "type": "null"
               }
             ]
+          },
+          "activity": {
+            "$ref": "#/components/schemas/LearningActivity"
           },
           "difficultWords": {
             "items": {

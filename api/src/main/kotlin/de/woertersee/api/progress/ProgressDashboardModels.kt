@@ -17,9 +17,17 @@ data class ProgressSummary(
 data class ActiveGameSummary(val id: UUID, val startedAt: Instant, val answeredCards: Int, val totalCards: Int)
 data class RecentGameSummary(val id: UUID, val type: String, val completedAt: Instant, val totalCards: Int, val accuracy: Double?)
 data class DifficultWordSummary(val id: UUID, val source: String, val german: String, val english: String)
+data class LearningActivityDay(val date: LocalDate, val gamesStarted: Int, val gamesCompleted: Int)
+data class LearningActivity(
+    val periodDays: Int,
+    val gamesStarted: Int,
+    val gamesCompleted: Int,
+    val days: List<LearningActivityDay>,
+)
 
 data class ProgressDashboard(
     val summary: ProgressSummary,
+    val activity: LearningActivity,
     val activeGame: ActiveGameSummary?,
     val recentGames: List<RecentGameSummary>,
     val difficultWords: List<DifficultWordSummary>,
