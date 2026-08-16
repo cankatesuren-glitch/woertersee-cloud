@@ -46,3 +46,53 @@ test("learner can review learning data settings", async ({ page }) => {
   await expect(dialog).toBeHidden();
   expect(resetRequests).toHaveLength(0);
 });
+
+test("learner can reset all progress with explicit confirmation", async ({
+  page,
+}) => {
+  const suffix = Date.now();
+  const password = "Local-e2e-password-42!";
+
+  await page.goto("/signin");
+  await page.getByRole("button", { name: "Create account" }).click();
+  await page
+    .getByRole("textbox", { name: "Username", exact: true })
+    .fill(`reset-learner-${suffix}`);
+  await page
+    .getByRole("textbox", { name: "Email", exact: true })
+    .fill(`reset-learner-${suffix}@example.invalid`);
+  await page
+    .getByRole("textbox", { name: "First name", exact: true })
+    .fill("Reset");
+  await page
+    .getByRole("textbox", { name: "Last name", exact: true })
+    .fill("Learner");
+  await page
+    .getByRole("textbox", { name: "Password", exact: true })
+    .fill(password);
+  await page
+    .getByRole("textbox", { name: "Confirm password", exact: true })
+    .fill(password);
+  await page.getByRole("button", { name: "Register", exact: true }).click();
+  await expect(page).toHaveURL(/\/account/);
+
+  await page.goto("/play");
+  await page.getByRole("button", { name: /start deck/i }).click();
+  await page.getByRole("button", { name: /reveal/i }).click();
+  await page.getByRole("button", { name: "Got it" }).click();
+
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Review reset" }).last().click();
+  const dialog = page.getByRole("dialog", { name: "Reset all progress?" });
+  const resetResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/progress/reset") &&
+      response.request().method() === "POST",
+  );
+  await dialog.getByRole("button", { name: "Confirm reset" }).click();
+
+  expect((await resetResponse).ok()).toBe(true);
+  await expect(page.getByRole("status")).toContainText(
+    /Reset all progress completed\. [1-9]\d* records changed\./,
+  );
+});
