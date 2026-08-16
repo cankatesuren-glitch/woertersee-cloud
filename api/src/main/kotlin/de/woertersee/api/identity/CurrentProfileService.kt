@@ -23,11 +23,24 @@ class CurrentProfileService(private val jdbc: JdbcClient) {
     }
 
     fun find(profileId: UUID): CurrentProfile = jdbc.sql(
-        "SELECT id, display_name FROM profiles WHERE id = :id",
+        "SELECT id, display_name, daily_goal_games FROM profiles WHERE id = :id",
     ).param("id", profileId).query { result, _ ->
         CurrentProfile(
             id = result.getObject("id", UUID::class.java),
             displayName = result.getString("display_name"),
+            dailyGoalGames = result.getInt("daily_goal_games"),
         )
     }.single()
+
+    fun updateDailyGoal(profileId: UUID, games: Int): DailyGoalPreference {
+        require(games in 1..10) { "Daily goal must contain 1-10 games" }
+        return jdbc.sql(
+            """UPDATE profiles SET daily_goal_games=:games,updated_at=now()
+               WHERE id=:profileId RETURNING daily_goal_games""",
+        ).param("games", games)
+            .param("profileId", profileId)
+            .query(Int::class.java)
+            .single()
+            .let(::DailyGoalPreference)
+    }
 }

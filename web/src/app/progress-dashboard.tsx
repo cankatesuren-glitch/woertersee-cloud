@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
-import type { components } from "@/lib/api/schema";
+import type { components, operations } from "@/lib/api/schema";
 
 type Dashboard = components["schemas"]["ProgressDashboard"];
+type DailyGoalRequest = operations["updateDailyGoal"]["requestBody"]["content"]["application/json"];
 
 export default function ProgressDashboard() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
   const [activityPeriod, setActivityPeriod] = useState<7 | 30>(7);
+  const [savingGoal, setSavingGoal] = useState(false);
 
   useEffect(() => {
     fetch("/api/progress")
@@ -47,6 +49,28 @@ export default function ProgressDashboard() {
     else setError(body.detail ?? "Could not start the difficult-word deck.");
   }
 
+  async function updateDailyGoal(games: number) {
+    if (!dashboard) return;
+    setSavingGoal(true);
+    setError("");
+    try {
+      const response = await fetch("/api/profile/learning-goal", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ games } satisfies DailyGoalRequest),
+      });
+      if (!response.ok) throw new Error();
+      setDashboard({
+        ...dashboard,
+        dailyGoal: { ...dashboard.dailyGoal, targetGames: games },
+      });
+    } catch {
+      setError("Could not save your daily goal.");
+    } finally {
+      setSavingGoal(false);
+    }
+  }
+
   if (error)
     return (
       <p role="alert" className="dashboard-error">
@@ -65,6 +89,7 @@ export default function ProgressDashboard() {
     .slice(-activityPeriod);
   const difficultWords = dashboard.difficultWords ?? [];
   const recentGames = dashboard.recentGames ?? [];
+  const dailyGoal = dashboard.dailyGoal;
   const activityStarted = activityDays.reduce(
     (total, day) => total + (day.gamesStarted ?? 0),
     0,
@@ -154,6 +179,30 @@ export default function ProgressDashboard() {
               </button>
             ))}
           </div>
+        </div>
+        <div className={`daily-goal ${dailyGoal?.achieved ? "achieved" : ""}`}>
+          <div>
+            <strong>{dailyGoal?.achieved ? "Daily goal complete" : "Today’s goal"}</strong>
+            <span>
+              {dailyGoal?.completedGames ?? 0} of {dailyGoal?.targetGames ?? 1} games completed
+            </span>
+          </div>
+          <div className="goal-progress" aria-label={`${dailyGoal?.percentage ?? 0}% of daily goal`}>
+            <span style={{ width: `${dailyGoal?.percentage ?? 0}%` }} />
+          </div>
+          <label>
+            Goal
+            <select
+              aria-label="Daily game goal"
+              disabled={savingGoal}
+              onChange={(event) => updateDailyGoal(Number(event.target.value))}
+              value={dailyGoal?.targetGames ?? 1}
+            >
+              {[1, 2, 3, 5, 10].map((games) => (
+                <option key={games} value={games}>{games} {games === 1 ? "game" : "games"}</option>
+              ))}
+            </select>
+          </label>
         </div>
         <div className="activity-chart" aria-label={`${activityPeriod} day game activity`}>
           {activityDays.map((day) => (

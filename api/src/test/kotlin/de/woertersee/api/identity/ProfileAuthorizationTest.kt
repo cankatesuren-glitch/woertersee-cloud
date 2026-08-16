@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.put
 
 @WebMvcTest(ProfileController::class)
 @Import(SecurityConfiguration::class)
@@ -18,6 +19,12 @@ class ProfileAuthorizationTest(@Autowired private val mockMvc: MockMvc) {
     @Test
     fun `anonymous visitor cannot create or read a profile`() {
         mockMvc.get("/api/v1/profile").andExpect {
+            status { isUnauthorized() }
+        }
+        mockMvc.put("/api/v1/profile/learning-goal") {
+            contentType = org.springframework.http.MediaType.APPLICATION_JSON
+            content = """{"games":3}"""
+        }.andExpect {
             status { isUnauthorized() }
         }
     }

@@ -53,12 +53,26 @@ class ProgressDashboardService(
             ProgressStreak.calculate(practiceDates, LocalDate.now(ZoneOffset.UTC)),
             totals.lastPractisedAt,
         )
+        val learningActivity = activity.get(profileId)
         return ProgressDashboard(
             summary,
-            activity.get(profileId),
+            learningActivity,
+            dailyGoal(profileId, learningActivity.days.lastOrNull()?.gamesCompleted ?: 0),
             activeGame(profileId),
             recentGames(profileId),
             difficultWords(profileId),
+        )
+    }
+
+    private fun dailyGoal(profileId: UUID, completedToday: Int): DailyLearningGoal {
+        val target = jdbc.sql(
+            "SELECT daily_goal_games FROM profiles WHERE id=:profileId",
+        ).param("profileId", profileId).query(Int::class.java).single()
+        return DailyLearningGoal(
+            target,
+            completedToday,
+            (completedToday * 100 / target).coerceAtMost(100),
+            completedToday >= target,
         )
     }
 

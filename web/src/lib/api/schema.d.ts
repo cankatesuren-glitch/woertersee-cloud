@@ -324,6 +324,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/profile/learning-goal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateDailyGoal"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/progress": {
         parameters: {
             query?: never;
@@ -506,9 +522,28 @@ export interface components {
             status?: string;
         };
         CurrentProfile: {
+            /** Format: int32 */
+            dailyGoalGames?: number;
             displayName?: string | null;
             /** Format: uuid */
             id?: string;
+        };
+        DailyGoalPreference: {
+            /** Format: int32 */
+            games?: number;
+        };
+        DailyGoalRequest: {
+            /** Format: int32 */
+            games?: number;
+        };
+        DailyLearningGoal: {
+            achieved?: boolean;
+            /** Format: int32 */
+            completedGames?: number;
+            /** Format: int32 */
+            percentage?: number;
+            /** Format: int32 */
+            targetGames?: number;
         };
         DifficultWordSummary: {
             english?: string;
@@ -610,6 +645,7 @@ export interface components {
         ProgressDashboard: {
             activeGame?: components["schemas"]["ActiveGameSummary"] | null;
             activity?: components["schemas"]["LearningActivity"];
+            dailyGoal?: components["schemas"]["DailyLearningGoal"];
             difficultWords?: components["schemas"]["DifficultWordSummary"][];
             recentGames?: components["schemas"]["RecentGameSummary"][];
             summary?: components["schemas"]["ProgressSummary"];
@@ -1299,6 +1335,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CurrentProfile"];
+                };
+            };
+        };
+    };
+    updateDailyGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DailyGoalRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DailyGoalPreference"];
                 };
             };
         };
