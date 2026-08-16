@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import type { components, operations } from "@/lib/api/schema";
 
 type Dashboard = components["schemas"]["ProgressDashboard"];
@@ -84,9 +84,14 @@ export default function ProgressDashboard() {
       </section>
     );
   const summary = dashboard.summary;
-  const activityDays = (dashboard.activity?.days ?? [])
+  const periodDays = (dashboard.activity?.days ?? [])
     .filter((day): day is typeof day & { date: string } => Boolean(day.date))
     .slice(-activityPeriod);
+  const firstActiveDay = periodDays.findIndex(
+    (day) => (day.gamesStarted ?? 0) > 0 || (day.gamesCompleted ?? 0) > 0,
+  );
+  const activityDays =
+    firstActiveDay < 0 ? periodDays.slice(-1) : periodDays.slice(firstActiveDay);
   const difficultWords = dashboard.difficultWords ?? [];
   const recentGames = dashboard.recentGames ?? [];
   const dailyGoal = dashboard.dailyGoal;
@@ -97,12 +102,6 @@ export default function ProgressDashboard() {
   const activityCompleted = activityDays.reduce(
     (total, day) => total + (day.gamesCompleted ?? 0),
     0,
-  );
-  const activityMaximum = Math.max(
-    1,
-    ...activityDays.map((day) =>
-      Math.max(day.gamesStarted ?? 0, day.gamesCompleted ?? 0),
-    ),
   );
 
   return (
@@ -204,35 +203,32 @@ export default function ProgressDashboard() {
             </select>
           </label>
         </div>
-        <div className="activity-chart" aria-label={`${activityPeriod} day game activity`}>
+        <div
+          className={`activity-rhythm ${activityPeriod === 30 ? "compact" : ""}`}
+          aria-label={`${activityPeriod} day game activity`}
+        >
           {activityDays.map((day) => (
-            <div className="activity-day" key={day.date}>
-              <div className="activity-bars">
-                <span
-                  className="started"
-                  style={{ "--bar-size": (day.gamesStarted ?? 0) / activityMaximum } as CSSProperties}
-                />
-                <span
-                  className="completed"
-                  style={{ "--bar-size": (day.gamesCompleted ?? 0) / activityMaximum } as CSSProperties}
-                />
-              </div>
+            <div
+              className={`rhythm-day ${(day.gamesCompleted ?? 0) > 0 ? "practised" : "rest"}`}
+              key={day.date}
+            >
               <time dateTime={day.date}>
                 {new Date(`${day.date}T00:00:00Z`).toLocaleDateString(undefined, {
-                  day: "numeric",
-                  month: activityPeriod === 7 ? "short" : undefined,
+                  weekday: "short",
                 })}
               </time>
+              <strong>{day.gamesCompleted ?? 0}</strong>
+              <small>{(day.gamesCompleted ?? 0) === 1 ? "session" : "sessions"}</small>
+              <span className="rhythm-mark" aria-hidden="true" />
               <span className="sr-only">
                 {day.gamesStarted ?? 0} started, {day.gamesCompleted ?? 0} completed
               </span>
             </div>
           ))}
         </div>
-        <div className="activity-legend">
-          <span><i className="started" /> Started</span>
-          <span><i className="completed" /> Completed</span>
-        </div>
+        <p className="activity-caption">
+          Showing your rhythm from your first practice day through today.
+        </p>
       </section>
       <div className="dashboard-columns">
         <div>
