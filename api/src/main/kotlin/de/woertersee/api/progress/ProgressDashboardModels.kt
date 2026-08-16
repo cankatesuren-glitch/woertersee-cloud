@@ -24,10 +24,17 @@ data class LearningActivity(
     val gamesCompleted: Int,
     val days: List<LearningActivityDay>,
 )
+data class DailyLearningGoal(
+    val targetGames: Int,
+    val completedGames: Int,
+    val percentage: Int,
+    val achieved: Boolean,
+)
 
 data class ProgressDashboard(
     val summary: ProgressSummary,
     val activity: LearningActivity,
+    val dailyGoal: DailyLearningGoal,
     val activeGame: ActiveGameSummary?,
     val recentGames: List<RecentGameSummary>,
     val difficultWords: List<DifficultWordSummary>,

@@ -355,6 +355,10 @@
       },
       "CurrentProfile": {
         "properties": {
+          "dailyGoalGames": {
+            "format": "int32",
+            "type": "integer"
+          },
           "displayName": {
             "type": [
               "string",
@@ -364,6 +368,46 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DailyGoalPreference": {
+        "properties": {
+          "games": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "DailyGoalRequest": {
+        "properties": {
+          "games": {
+            "format": "int32",
+            "maximum": 10,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "DailyLearningGoal": {
+        "properties": {
+          "achieved": {
+            "type": "boolean"
+          },
+          "completedGames": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "percentage": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "targetGames": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -679,6 +723,9 @@
           },
           "activity": {
             "$ref": "#/components/schemas/LearningActivity"
+          },
+          "dailyGoal": {
+            "$ref": "#/components/schemas/DailyLearningGoal"
           },
           "difficultWords": {
             "items": {
@@ -1890,6 +1937,41 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CurrentProfile"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "profile-controller"
+        ]
+      }
+    },
+    "/api/v1/profile/learning-goal": {
+      "put": {
+        "operationId": "updateDailyGoal",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyGoalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyGoalPreference"
                 }
               }
             },

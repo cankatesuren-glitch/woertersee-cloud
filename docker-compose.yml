@@ -10,6 +10,12 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
       LEGACY_SEED_ENABLED: "true"
     ports: ["8080:8080"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     depends_on:
       postgres:
         condition: service_healthy
@@ -28,7 +34,9 @@ services:
       AUTH_KEYCLOAK_ISSUER: http://localhost:8081/realms/woertersee
       AUTH_KEYCLOAK_INTERNAL_ISSUER: http://keycloak:8080/realms/woertersee
     ports: ["3000:3000"]
-    depends_on: [api]
+    depends_on:
+      api:
+        condition: service_healthy
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.3
