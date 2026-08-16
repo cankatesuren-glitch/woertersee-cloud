@@ -23,6 +23,7 @@ services:
       AUTH_KEYCLOAK_ID: woertersee-web
       AUTH_KEYCLOAK_SECRET: local-development-only
       AUTH_KEYCLOAK_ISSUER: http://localhost:8081/realms/woertersee
+      AUTH_KEYCLOAK_INTERNAL_ISSUER: http://keycloak:8080/realms/woertersee
     ports: ["3000:3000"]
     depends_on: [api]
 
