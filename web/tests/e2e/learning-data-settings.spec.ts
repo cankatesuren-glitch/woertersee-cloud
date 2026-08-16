@@ -30,6 +30,20 @@ test("learner can review learning data settings", async ({ page }) => {
   await expect(page.getByText("Reset all progress", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Review reset" })).toHaveCount(3);
 
+  const reminder = page.getByRole("region", { name: "Practice reminder" });
+  await expect(reminder).toBeVisible();
+  await reminder.getByLabel("Remind me to practice").check();
+  await reminder.getByLabel("Reminder time").fill("19:30");
+  await reminder.getByLabel("Time zone").fill("Europe/Vienna");
+  const reminderResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/profile/practice-reminder") &&
+      response.request().method() === "PUT",
+  );
+  await reminder.getByRole("button", { name: "Save reminder" }).click();
+  expect((await reminderResponse).ok()).toBe(true);
+  await expect(reminder.getByRole("status")).toHaveText("Practice reminder saved.");
+
   const resetRequests: string[] = [];
   page.on("request", (request) => {
     if (request.url().endsWith("/api/progress/reset")) {

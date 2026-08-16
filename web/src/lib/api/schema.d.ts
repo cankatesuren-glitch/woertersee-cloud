@@ -340,6 +340,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/profile/practice-reminder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["practiceReminder"];
+        put: operations["updatePracticeReminder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/progress": {
         parameters: {
             query?: never;
@@ -641,6 +657,16 @@ export interface components {
             updatedAt?: string;
             /** Format: int64 */
             version?: number;
+        };
+        PracticeReminderPreference: {
+            enabled?: boolean;
+            localTime?: string;
+            timezone?: string;
+        };
+        PracticeReminderRequest: {
+            enabled?: boolean;
+            localTime?: string;
+            timezone: string;
         };
         ProgressDashboard: {
             activeGame?: components["schemas"]["ActiveGameSummary"] | null;
@@ -1359,6 +1385,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DailyGoalPreference"];
+                };
+            };
+        };
+    };
+    practiceReminder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PracticeReminderPreference"];
+                };
+            };
+        };
+    };
+    updatePracticeReminder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeReminderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PracticeReminderPreference"];
                 };
             };
         };

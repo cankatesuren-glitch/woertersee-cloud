@@ -709,6 +709,38 @@
         },
         "type": "object"
       },
+      "PracticeReminderPreference": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "localTime": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PracticeReminderRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "localTime": {
+            "type": "string"
+          },
+          "timezone": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "timezone"
+        ],
+        "type": "object"
+      },
       "ProgressDashboard": {
         "properties": {
           "activeGame": {
@@ -1972,6 +2004,64 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/DailyGoalPreference"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "profile-controller"
+        ]
+      }
+    },
+    "/api/v1/profile/practice-reminder": {
+      "get": {
+        "operationId": "practiceReminder",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeReminderPreference"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "profile-controller"
+        ]
+      },
+      "put": {
+        "operationId": "updatePracticeReminder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeReminderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeReminderPreference"
                 }
               }
             },
