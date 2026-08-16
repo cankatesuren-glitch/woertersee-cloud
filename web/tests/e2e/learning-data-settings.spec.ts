@@ -28,5 +28,21 @@ test("learner can review learning data settings", async ({ page }) => {
     page.getByText("Reset learning progress", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Reset all progress", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Reset" })).toHaveCount(3);
+  await expect(page.getByRole("button", { name: "Review reset" })).toHaveCount(3);
+
+  const resetRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/api/progress/reset")) {
+      resetRequests.push(request.url());
+    }
+  });
+
+  await page.getByRole("button", { name: "Review reset" }).last().click();
+  const dialog = page.getByRole("dialog", { name: "Reset all progress?" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/cannot be undone/i)).toBeVisible();
+  await dialog.getByRole("button", { name: "Keep my data" }).click();
+
+  await expect(dialog).toBeHidden();
+  expect(resetRequests).toHaveLength(0);
 });

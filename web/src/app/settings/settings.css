@@ -1,0 +1,130 @@
+.settings-shell {
+  background: radial-gradient(circle at 90% 5%, #fff3b8 0, transparent 22%);
+}
+
+.settings-lede {
+  max-width: 620px;
+  color: #59647a;
+  font: 18px/1.6 Georgia, serif;
+}
+
+.settings-list {
+  display: grid;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+.settings-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 24px 0;
+  border-bottom: 1px solid #d9dde5;
+}
+
+.settings-list article div {
+  display: grid;
+  gap: 8px;
+}
+
+.settings-list article strong {
+  font: 22px Georgia, serif;
+}
+
+.settings-list article span {
+  color: #667087;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.settings-list article button {
+  flex: 0 0 auto;
+  border: 1px solid #8b2940;
+  background: transparent;
+  color: #8b2940;
+  padding: 12px 18px;
+  font-weight: 700;
+}
+
+.settings-notice {
+  margin: 24px 0 0;
+  padding: 16px 18px;
+  border-left: 4px solid;
+}
+
+.settings-notice.success {
+  border-color: #287a4b;
+  background: #edf7f1;
+  color: #195c36;
+}
+
+.settings-notice.error {
+  border-color: #a42e49;
+  background: #fff0f3;
+  color: #7d1f35;
+}
+
+.settings-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(11 36 84 / 64%);
+}
+
+.settings-dialog {
+  width: min(100%, 540px);
+  border: 1px solid #d9dde5;
+  background: #fffdf7;
+  padding: clamp(28px, 5vw, 48px);
+  box-shadow: 0 24px 80px rgb(4 16 40 / 28%);
+}
+
+.settings-dialog h2 {
+  margin: 12px 0 16px;
+  font: 36px/1.1 Georgia, serif;
+}
+
+.settings-dialog p:not(.eyebrow) {
+  color: #59647a;
+  line-height: 1.6;
+}
+
+.settings-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.settings-dialog-actions button {
+  padding: 13px 18px;
+  font-weight: 700;
+}
+
+.settings-danger {
+  border: 1px solid #8b2940;
+  background: #8b2940;
+  color: white;
+}
+
+.settings-dialog-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 620px) {
+  .settings-list article,
+  .settings-dialog-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-list article button {
+    align-self: start;
+  }
+}
