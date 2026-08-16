@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { components, operations } from "@/lib/api/schema";
 
 const options = [
@@ -29,6 +29,9 @@ type Notice = { kind: "success" | "error"; text: string };
 type ResetProgressRequest = operations["reset"]["requestBody"]["content"]["application/json"];
 type ResetProgressResult = components["schemas"]["ResetProgressResult"];
 type ApiProblem = { detail?: string };
+type ReminderPreference = Required<
+  components["schemas"]["PracticeReminderPreference"]
+>;
 
 async function responseBody(response: Response) {
   const contentType = response.headers.get("content-type") ?? "";
@@ -43,7 +46,38 @@ export default function SettingsClient() {
   const [selected, setSelected] = useState<ResetOption | null>(null);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [reminder, setReminder] = useState<ReminderPreference>({
+    enabled: false,
+    localTime: "18:00",
+    timezone: "Europe/Berlin",
+  });
+  const [reminderPending, setReminderPending] = useState(true);
+  const [reminderNotice, setReminderNotice] = useState<Notice | null>(null);
   const returnFocusTo = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone) setReminder((current) => ({ ...current, timezone }));
+
+    fetch("/api/profile/practice-reminder")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Reminder settings could not be loaded.");
+        return response.json() as Promise<ReminderPreference>;
+      })
+      .then((preference) =>
+        setReminder({
+          ...preference,
+          localTime: preference.localTime.slice(0, 5),
+        }),
+      )
+      .catch((error) =>
+        setReminderNotice({
+          kind: "error",
+          text: error instanceof Error ? error.message : "Reminder settings could not be loaded.",
+        }),
+      )
+      .finally(() => setReminderPending(false));
+  }, []);
 
   useEffect(() => {
     if (!selected) return;
@@ -118,6 +152,32 @@ export default function SettingsClient() {
     }
   }
 
+  async function saveReminder(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setReminderPending(true);
+    setReminderNotice(null);
+    try {
+      const response = await fetch("/api/profile/practice-reminder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reminder),
+      });
+      const body = (await response.json().catch(() => null)) as
+        | (ReminderPreference & ApiProblem)
+        | null;
+      if (!response.ok) throw new Error(body?.detail ?? "Reminder settings could not be saved.");
+      if (body) setReminder({ ...body, localTime: body.localTime.slice(0, 5) });
+      setReminderNotice({ kind: "success", text: "Practice reminder saved." });
+    } catch (error) {
+      setReminderNotice({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Reminder settings could not be saved.",
+      });
+    } finally {
+      setReminderPending(false);
+    }
+  }
+
   return (
     <main className="words-shell settings-shell">
       <header>
@@ -137,6 +197,58 @@ export default function SettingsClient() {
           Choose exactly what you want to reset. Your account and personal words
           are never removed here.
         </p>
+      </section>
+      <section className="reminder-settings" aria-labelledby="reminder-title">
+        <div>
+          <p className="eyebrow">PRACTICE RHYTHM</p>
+          <h2 id="reminder-title">Practice reminder</h2>
+          <p>Choose when you want a gentle nudge to return to your words.</p>
+        </div>
+        <form onSubmit={saveReminder}>
+          <label className="reminder-toggle">
+            <input
+              checked={reminder.enabled}
+              disabled={reminderPending}
+              onChange={(event) =>
+                setReminder((current) => ({ ...current, enabled: event.target.checked }))
+              }
+              type="checkbox"
+            />
+            Remind me to practice
+          </label>
+          <label>
+            Reminder time
+            <input
+              disabled={!reminder.enabled || reminderPending}
+              onChange={(event) =>
+                setReminder((current) => ({ ...current, localTime: event.target.value }))
+              }
+              required
+              type="time"
+              value={reminder.localTime}
+            />
+          </label>
+          <label>
+            Time zone
+            <input
+              disabled={!reminder.enabled || reminderPending}
+              onChange={(event) =>
+                setReminder((current) => ({ ...current, timezone: event.target.value }))
+              }
+              required
+              type="text"
+              value={reminder.timezone}
+            />
+          </label>
+          <button disabled={reminderPending} type="submit">
+            {reminderPending ? "Saving…" : "Save reminder"}
+          </button>
+          {reminderNotice && (
+            <p className={`settings-notice ${reminderNotice.kind}`} role="status">
+              {reminderNotice.text}
+            </p>
+          )}
+        </form>
       </section>
       <section className="settings-list" aria-label="Learning data reset options">
         {options.map((option) => (

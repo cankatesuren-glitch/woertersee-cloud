@@ -27,5 +27,14 @@ class ProfileAuthorizationTest(@Autowired private val mockMvc: MockMvc) {
         }.andExpect {
             status { isUnauthorized() }
         }
+        mockMvc.get("/api/v1/profile/practice-reminder").andExpect {
+            status { isUnauthorized() }
+        }
+        mockMvc.put("/api/v1/profile/practice-reminder") {
+            contentType = org.springframework.http.MediaType.APPLICATION_JSON
+            content = """{"enabled":true,"localTime":"18:00","timezone":"Europe/Berlin"}"""
+        }.andExpect {
+            status { isUnauthorized() }
+        }
     }
 }

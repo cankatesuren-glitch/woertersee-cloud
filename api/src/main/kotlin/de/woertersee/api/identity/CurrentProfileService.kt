@@ -3,6 +3,10 @@ package de.woertersee.api.identity
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import org.slf4j.MDC
+import java.sql.Time
+import java.time.ZoneId
 import java.util.UUID
 
 @Service
@@ -42,5 +46,57 @@ class CurrentProfileService(private val jdbc: JdbcClient) {
             .query(Int::class.java)
             .single()
             .let(::DailyGoalPreference)
+    }
+
+    fun practiceReminder(profileId: UUID): PracticeReminderPreference = jdbc.sql(
+        """SELECT practice_reminder_enabled,practice_reminder_time,practice_reminder_timezone
+           FROM profiles WHERE id=:profileId""",
+    ).param("profileId", profileId).query { result, _ ->
+        PracticeReminderPreference(
+            enabled = result.getBoolean("practice_reminder_enabled"),
+            localTime = result.getTime("practice_reminder_time").toLocalTime(),
+            timezone = result.getString("practice_reminder_timezone"),
+        )
+    }.single()
+
+    @Transactional
+    fun updatePracticeReminder(
+        profileId: UUID,
+        request: PracticeReminderRequest,
+    ): PracticeReminderPreference {
+        ZoneId.of(request.timezone)
+        val preference = jdbc.sql(
+            """UPDATE profiles SET practice_reminder_enabled=:enabled,
+                 practice_reminder_time=:localTime,practice_reminder_timezone=:timezone,updated_at=now()
+               WHERE id=:profileId
+               RETURNING practice_reminder_enabled,practice_reminder_time,practice_reminder_timezone""",
+        ).param("enabled", request.enabled)
+            .param("localTime", Time.valueOf(request.localTime))
+            .param("timezone", request.timezone)
+            .param("profileId", profileId)
+            .query { result, _ ->
+                PracticeReminderPreference(
+                    enabled = result.getBoolean("practice_reminder_enabled"),
+                    localTime = result.getTime("practice_reminder_time").toLocalTime(),
+                    timezone = result.getString("practice_reminder_timezone"),
+                )
+            }.single()
+
+        val correlation = runCatching { UUID.fromString(MDC.get("correlation_id")) }
+            .getOrElse { UUID.randomUUID() }
+        jdbc.sql(
+            """INSERT INTO outbox_events(event_id,event_type,event_version,aggregate_id,user_id,
+                 occurred_at,correlation_id,payload)
+               VALUES(:eventId,'PracticeReminderPreferenceChanged',1,:profileId,:profileId,now(),
+                 :correlation,jsonb_build_object('profile_id',:profileId,'enabled',:enabled,
+                 'local_time',:localTime,'timezone',:timezone))""",
+        ).param("eventId", UUID.randomUUID())
+            .param("profileId", profileId)
+            .param("correlation", correlation)
+            .param("enabled", preference.enabled)
+            .param("localTime", preference.localTime.toString())
+            .param("timezone", preference.timezone)
+            .update()
+        return preference
     }
 }

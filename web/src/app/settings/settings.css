@@ -15,6 +15,71 @@
   padding: 0 24px 80px;
 }
 
+.reminder-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+  gap: 56px;
+  max-width: 920px;
+  margin: 0 auto 56px;
+  padding: 32px 24px;
+  border-block: 1px solid #d9dde5;
+}
+
+.reminder-settings h2 {
+  margin: 10px 0;
+  font: 34px/1.1 Georgia, serif;
+}
+
+.reminder-settings p:not(.eyebrow, .settings-notice) {
+  color: #667087;
+  line-height: 1.5;
+}
+
+.reminder-settings form,
+.reminder-settings label:not(.reminder-toggle) {
+  display: grid;
+  gap: 8px;
+}
+
+.reminder-settings form {
+  gap: 16px;
+}
+
+.reminder-settings label {
+  color: #263651;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.reminder-settings input[type="text"],
+.reminder-settings input[type="time"] {
+  border: 1px solid #aeb7c6;
+  background: #fff;
+  padding: 12px;
+  color: #102b5c;
+  font: inherit;
+}
+
+.reminder-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reminder-settings button {
+  justify-self: start;
+  border: 1px solid #102b5c;
+  background: #102b5c;
+  color: white;
+  padding: 12px 18px;
+  font-weight: 700;
+}
+
+.reminder-settings button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .settings-list article {
   display: flex;
   align-items: center;
@@ -118,6 +183,11 @@
 }
 
 @media (max-width: 620px) {
+  .reminder-settings {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
   .settings-list article,
   .settings-dialog-actions {
     align-items: stretch;
