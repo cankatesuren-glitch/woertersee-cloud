@@ -5,7 +5,7 @@ body{margin:0;background:var(--paper);color:var(--navy);font-family:Arial,Helvet
 main{min-height:100vh}
 nav{height:86px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(24px,6vw,96px);border-bottom:1px solid #dce0e7}
 .brand{font-family:Georgia,serif;font-size:28px;font-weight:700;text-decoration:none;color:var(--navy)}
-.brand span{color:#b78d00}
+.brand span{color:var(--amber-deep)}
 .navlinks{display:flex;align-items:center;gap:32px}
 .navlinks a{color:var(--navy);text-decoration:none;font-size:14px}
 .ghost,.secondary{background:transparent;border:1px solid var(--navy);color:var(--navy);padding:13px 22px;border-radius:2px;font-weight:700}
@@ -33,4 +33,3 @@ button{cursor:pointer}
 .stats{gap:28px}
 .deck{grid-template-columns:1fr;gap:20px}
 }
-
