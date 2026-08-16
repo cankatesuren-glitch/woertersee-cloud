@@ -19,7 +19,7 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "protocol": "openid-connect",
-      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email"]
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email", "basic"]
     }
   ],
   "users": [
