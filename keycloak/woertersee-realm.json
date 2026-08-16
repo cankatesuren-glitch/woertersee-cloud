@@ -19,6 +19,9 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "protocol": "openid-connect",
+      "attributes": {
+        "client.use.lightweight.access.token.enabled": "false"
+      },
       "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email"]
     }
   ],
