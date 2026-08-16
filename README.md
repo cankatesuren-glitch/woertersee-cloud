@@ -11,6 +11,8 @@ docker compose up --build
 - Web: http://localhost:3000
 - API: http://localhost:8080
 - API health: http://localhost:8080/actuator/health
+- OpenAPI: http://localhost:8080/v3/api-docs
+- Swagger UI: http://localhost:8080/swagger-ui.html
 - Keycloak: http://localhost:8081
 
 Architecture and delivery decisions live in [`docs`](docs/architecture.md).

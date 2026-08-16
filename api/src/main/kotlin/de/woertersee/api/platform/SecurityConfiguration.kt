@@ -25,6 +25,7 @@ class SecurityConfiguration {
         .csrf { it.disable() }
         .authorizeHttpRequests {
             it.requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+            it.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
             it.requestMatchers(HttpMethod.GET, "/api/v1/vocabulary/**").permitAll()
             it.requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
             it.anyRequest().authenticated()
