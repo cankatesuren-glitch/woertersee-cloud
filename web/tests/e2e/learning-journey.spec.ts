@@ -21,6 +21,11 @@ test("learner signs in, completes a deck and sees results", async ({
   await page.getByRole("button", { name: /start deck/i }).click();
   for (let card = 0; card < 10; card++) {
     await page.getByRole("button", { name: /reveal/i }).click();
+    if (card === 0) {
+      await page.getByRole("button", { name: /translation:/i }).click();
+      await expect(page.getByRole("button", { name: /reveal/i })).toBeVisible();
+      await page.getByRole("button", { name: /reveal/i }).click();
+    }
     await page.getByRole("button", { name: "Got it" }).click();
   }
   await expect(page.getByText("SESSION COMPLETE")).toBeVisible();

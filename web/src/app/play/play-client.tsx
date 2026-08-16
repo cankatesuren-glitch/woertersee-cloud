@@ -191,6 +191,7 @@ export default function PlayClient({ userName }: { userName: string }) {
     );
 
   const current = game.cards[index];
+  const englishVisible = game.direction === "DE_EN" ? revealed : !revealed;
   if (game.status !== "ACTIVE")
     return (
       <main className="play-shell">
@@ -253,7 +254,7 @@ export default function PlayClient({ userName }: { userName: string }) {
         <button
           type="button"
           className="word-card"
-          onClick={() => setRevealed(true)}
+          onClick={() => setRevealed((visible) => !visible)}
           aria-label={
             revealed
               ? `Translation: ${current?.back}`
@@ -268,10 +269,12 @@ export default function PlayClient({ userName }: { userName: string }) {
                 : "ENGLISH"}
           </p>
           <h1>{revealed ? current?.back : current?.front}</h1>
-          {!revealed && current?.forms.length ? (
-            <span>{current.forms.join(" · ")}</span>
+          {englishVisible && current?.forms.length === 3 ? (
+            <span>
+              Präteritum: {current.forms[1]} · Perfekt: {current.forms[2]}
+            </span>
           ) : null}
-          <small>{revealed ? "How did that feel?" : "Tap to reveal"}</small>
+          <small>{revealed ? "Tap to see the first side" : "Tap to reveal"}</small>
         </button>
         {current?.source === "GLOBAL" && (
           <button className="finish" onClick={report}>
