@@ -19,3 +19,16 @@ transaction as their read-model update.
 Failed publishes use capped exponential backoff. After eight attempts an event
 moves to `DEAD` for operational review instead of retrying forever. Publisher
 metrics expose successful, failed and dead deliveries.
+
+## Learning activity consumer
+
+The `learning-activity-v1` consumer builds a daily activity projection from
+`GameStarted` and `GameCompleted` events. It records the event ID and projection
+update in one database transaction, so replaying a message does not increment
+the counters twice. Other version-one events are acknowledged without changing
+the projection, allowing all domain events to share one ordered topic.
+
+Invalid messages and unsupported event versions are retried twice and then sent
+to `woertersee.domain-events.v1.dlt` with the source partition preserved. Events
+for profiles removed under the data-deletion flow are acknowledged without
+recreating a projection.
