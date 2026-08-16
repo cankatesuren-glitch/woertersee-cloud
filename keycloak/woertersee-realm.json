@@ -30,7 +30,7 @@
       "firstName": "WörterSee",
       "lastName": "Learner",
       "email": "demo@localhost.invalid",
-      "realmRoles": ["USER"],
+      "realmRoles": ["default-roles-woertersee", "USER"],
       "credentials": [
         { "type": "password", "value": "local-demo-only", "temporary": false }
       ]
@@ -42,7 +42,7 @@
       "firstName": "WörterSee",
       "lastName": "Admin",
       "email": "admin@localhost.invalid",
-      "realmRoles": ["USER", "ADMIN"],
+      "realmRoles": ["default-roles-woertersee", "USER", "ADMIN"],
       "credentials": [
         { "type": "password", "value": "local-admin-only", "temporary": false }
       ]
