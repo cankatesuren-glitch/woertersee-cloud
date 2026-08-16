@@ -15,6 +15,11 @@ spring:
           jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8081/realms/woertersee/protocol/openid-connect/certs}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
       acks: all
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
