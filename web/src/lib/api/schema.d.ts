@@ -574,6 +574,23 @@ export interface components {
             /** @enum {string} */
             type?: "ORIGINAL" | "REVIEW" | "REPLAY";
         };
+        LearningActivity: {
+            days?: components["schemas"]["LearningActivityDay"][];
+            /** Format: int32 */
+            gamesCompleted?: number;
+            /** Format: int32 */
+            gamesStarted?: number;
+            /** Format: int32 */
+            periodDays?: number;
+        };
+        LearningActivityDay: {
+            /** Format: date */
+            date?: string;
+            /** Format: int32 */
+            gamesCompleted?: number;
+            /** Format: int32 */
+            gamesStarted?: number;
+        };
         PersonalWordRequest: {
             category?: string | null;
             english: string;
@@ -592,6 +609,7 @@ export interface components {
         };
         ProgressDashboard: {
             activeGame?: components["schemas"]["ActiveGameSummary"] | null;
+            activity?: components["schemas"]["LearningActivity"];
             difficultWords?: components["schemas"]["DifficultWordSummary"][];
             recentGames?: components["schemas"]["RecentGameSummary"][];
             summary?: components["schemas"]["ProgressSummary"];
