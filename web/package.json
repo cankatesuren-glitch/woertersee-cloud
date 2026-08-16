@@ -6,7 +6,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "api:contract": "node scripts/download-openapi.mjs",
+    "api:types": "openapi-typescript src/lib/api/openapi.json -o src/lib/api/schema.d.ts",
+    "api:generate": "npm run api:contract && npm run api:types",
+    "api:check": "npm run api:generate && git diff --exit-code -- src/lib/api/openapi.json src/lib/api/schema.d.ts"
   },
   "dependencies": {
     "next": "^16.3.1",
@@ -22,6 +26,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.3.1",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5"
   }
 }

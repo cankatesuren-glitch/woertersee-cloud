@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { components, operations } from "@/lib/api/schema";
 
 const options = [
   {
@@ -25,15 +26,17 @@ const options = [
 
 type ResetOption = (typeof options)[number];
 type Notice = { kind: "success" | "error"; text: string };
+type ResetProgressRequest = operations["reset"]["requestBody"]["content"]["application/json"];
+type ResetProgressResult = components["schemas"]["ResetProgressResult"];
+type ApiProblem = { detail?: string };
 
 async function responseBody(response: Response) {
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return null;
 
-  return response.json().catch(() => null) as Promise<{
-    affectedRecords?: number;
-    detail?: string;
-  } | null>;
+  return response.json().catch(() => null) as Promise<
+    (ResetProgressResult & ApiProblem) | null
+  >;
 }
 
 export default function SettingsClient() {
@@ -80,10 +83,14 @@ export default function SettingsClient() {
     setNotice(null);
 
     try {
+      const request = {
+        type: selected.type,
+        confirmed: true,
+      } satisfies ResetProgressRequest;
       const response = await fetch("/api/progress/reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: selected.type, confirmed: true }),
+        body: JSON.stringify(request),
       });
       const body = await responseBody(response);
 
