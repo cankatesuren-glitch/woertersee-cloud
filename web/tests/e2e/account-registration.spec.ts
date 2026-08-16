@@ -11,8 +11,9 @@ test("learner can open account registration", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/realms\/woertersee\//);
   await expect(page.getByRole("heading", { name: /register/i })).toBeVisible();
-  await expect(page.getByLabel(/username/i)).toBeVisible();
-  await expect(page.getByLabel(/^email$/i)).toBeVisible();
-  await expect(page.getByLabel(/^password$/i)).toBeVisible();
-  await expect(page.getByLabel(/confirm password/i)).toBeVisible();
+  for (const field of ["Username", "Email", "Password", "Confirm password"]) {
+    await expect(
+      page.getByRole("textbox", { name: field, exact: true }),
+    ).toBeVisible();
+  }
 });
