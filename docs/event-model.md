@@ -32,3 +32,14 @@ Invalid messages and unsupported event versions are retried twice and then sent
 to `woertersee.domain-events.v1.dlt` with the source partition preserved. Events
 for profiles removed under the data-deletion flow are acknowledged without
 recreating a projection.
+
+## Practice reminders
+
+The reminder scheduler evaluates each enabled profile in its configured IANA
+time zone. Once the local reminder time has passed, it creates one delivery row
+for that learner and local date and writes a `PracticeReminderDue` event to the
+outbox in the same transaction.
+
+The unique `(profile_id, reminder_date)` constraint makes repeated scheduler
+runs and concurrent API instances safe. Delivery providers consume the due
+event; scheduling does not depend on a specific email or push vendor.

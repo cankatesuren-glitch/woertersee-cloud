@@ -48,5 +48,8 @@ woertersee:
     enabled: ${OUTBOX_ENABLED:true}
     topic: ${OUTBOX_TOPIC:woertersee.domain-events.v1}
     poll-interval: ${OUTBOX_POLL_INTERVAL:1000}
+  reminders:
+    enabled: ${PRACTICE_REMINDERS_ENABLED:true}
+    poll-interval: ${PRACTICE_REMINDERS_POLL_INTERVAL:60000}
   seed:
     legacy: ${LEGACY_SEED_ENABLED:false}
