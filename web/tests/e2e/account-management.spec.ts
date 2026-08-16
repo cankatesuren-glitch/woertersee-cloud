@@ -18,5 +18,7 @@ test("learner can open identity account management", async ({ page }) => {
   await page.getByRole("link", { name: "Manage password and profile" }).click();
 
   await expect(page).toHaveURL(/\/realms\/woertersee\/account/);
-  await expect(page.getByText("Personal info", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Personal info", exact: true }),
+  ).toBeVisible();
 });
