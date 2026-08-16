@@ -284,12 +284,18 @@ export default function PlayClient({ userName }: { userName: string }) {
         {notice && <p>{notice}</p>}
         {revealed && (
           <div className="answer-actions">
-            <button onClick={() => answer("DIFFICULT")}>Not yet</button>
-            <button onClick={() => answer("KNOWN")}>Got it</button>
+            <button className="answer-again" onClick={() => answer("DIFFICULT")}>
+              <span>Not yet</span>
+              <small>Show me again sooner</small>
+            </button>
+            <button className="answer-known" onClick={() => answer("KNOWN")}>
+              <span>Got it</span>
+              <small>I remembered this</small>
+            </button>
           </div>
         )}
-        <button className="finish" onClick={() => action("finish")}>
-          Finish game
+        <button className="finish session-exit" onClick={() => action("finish")}>
+          Finish this session
         </button>
         {error && <p className="error">{error}</p>}
       </section>
