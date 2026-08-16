@@ -33,3 +33,9 @@ button{cursor:pointer}
 .stats{gap:28px}
 .deck{grid-template-columns:1fr;gap:20px}
 }
+.smart-deck{display:grid;gap:10px;padding:18px;border:1px solid #a7c0ad;border-radius:16px;background:var(--sage-soft)}
+.smart-deck>div{display:flex;align-items:center;gap:13px}
+.smart-deck>div>span{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--sage);color:white;font-size:22px}
+.smart-deck p{display:grid;gap:4px;margin:0}
+.smart-deck small{color:var(--muted)}
+.smart-deck .choice{padding-bottom:0;border-color:#bdd0c1}

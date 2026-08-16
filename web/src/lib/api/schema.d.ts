@@ -597,6 +597,8 @@ export interface components {
             front?: string;
             /** Format: uuid */
             id?: string;
+            /** Format: date-time */
+            nextReviewAt?: string | null;
             /** Format: int32 */
             position?: number;
             /** @enum {string|null} */
