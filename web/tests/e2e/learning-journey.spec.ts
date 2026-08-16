@@ -14,6 +14,7 @@ test("learner signs in, completes a deck and sees results", async ({
   await page.getByLabel(/password/i).fill("local-demo-only");
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/account/);
+  await expect(page.getByText("Learning profile connected")).toBeVisible();
   await page.goto("/play");
   await page.getByRole("button", { name: /start deck/i }).click();
   for (let card = 0; card < 10; card++) {
