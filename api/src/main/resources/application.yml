@@ -13,6 +13,15 @@ spring:
         jwt:
           issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8081/realms/woertersee}
           jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8081/realms/woertersee/protocol/openid-connect/certs}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
 management:
   endpoints:
     web:
@@ -30,5 +39,9 @@ springdoc:
     display-request-duration: true
     operations-sorter: method
 woertersee:
+  outbox:
+    enabled: ${OUTBOX_ENABLED:true}
+    topic: ${OUTBOX_TOPIC:woertersee.domain-events.v1}
+    poll-interval: ${OUTBOX_POLL_INTERVAL:1000}
   seed:
     legacy: ${LEGACY_SEED_ENABLED:false}
