@@ -20,6 +20,20 @@
       "directAccessGrantsEnabled": false,
       "protocol": "openid-connect",
       "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email", "basic"]
+    },
+    {
+      "clientId": "woertersee-mobile",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["woertersee://oauth/callback"],
+      "webOrigins": [],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": ["acr", "roles", "profile", "email", "basic"]
     }
   ],
   "users": [
