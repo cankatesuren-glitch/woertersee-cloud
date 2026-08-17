@@ -34,6 +34,12 @@ The product is delivered web-first, followed by a native mobile client after API
 
 The disposable local learner account is `demo` / `local-demo-only`. Never reuse these local-only credentials in a deployed environment.
 
+## iOS app
+
+The Expo client lives in [`mobile`](mobile/README.md). It currently provides the
+native Today experience and the session storage needed for the upcoming
+Keycloak sign-in flow.
+
 ## Refresh legacy vocabulary
 
 Clone the original application into `legacy-source`, then validate without writing:
