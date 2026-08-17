@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ApiError, getProgressDashboard, type DailyLearningGoal, type TodayPractice } from "@/lib/api";
-import { getAccessToken } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
 
 type ScreenState =
   | { kind: "loading" }
@@ -20,11 +20,12 @@ type ScreenState =
   | { kind: "error"; message: string };
 
 export default function TodayScreen() {
+  const auth = useAuth();
   const [state, setState] = useState<ScreenState>({ kind: "loading" });
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const token = await getAccessToken();
+    const token = await auth.getAccessToken();
     if (!token) {
       setState({ kind: "signedOut" });
       return;
@@ -37,7 +38,7 @@ export default function TodayScreen() {
       const message = error instanceof ApiError ? error.message : "Your practice plan could not be loaded.";
       setState({ kind: "error", message });
     }
-  }, []);
+  }, [auth]);
 
   useEffect(() => {
     void load();
@@ -60,7 +61,7 @@ export default function TodayScreen() {
         <Text style={styles.intro}>Your next practice is ready when you are.</Text>
 
         {state.kind === "loading" && <ActivityIndicator style={styles.loader} color="#bd5b3d" />}
-        {state.kind === "signedOut" && <SignedOutCard />}
+        {state.kind === "signedOut" && <SignedOutCard loading={auth.loading} error={auth.error} signIn={auth.signIn} />}
         {state.kind === "ready" && <PracticeCard today={state.today} dailyGoal={state.dailyGoal} />}
         {state.kind === "error" && <ErrorCard message={state.message} retry={load} />}
       </ScrollView>
@@ -93,16 +94,17 @@ function PracticeCard({ today, dailyGoal }: { today: TodayPractice; dailyGoal: D
   );
 }
 
-function SignedOutCard() {
+function SignedOutCard({ loading, error, signIn }: { loading: boolean; error?: string; signIn: () => Promise<void> }) {
   return (
     <View style={styles.card}>
       <Text style={styles.cardLabel}>WELCOME</Text>
       <Text style={styles.cardTitle}>Bring your progress with you.</Text>
       <Text style={styles.cardCopy}>Connect your WörterSee account to see today’s words and learning streak.</Text>
-      <Pressable accessibilityRole="button" style={styles.primaryButton}>
-        <Text style={styles.primaryButtonText}>Connect account</Text>
+      <Pressable accessibilityRole="button" disabled={loading} onPress={signIn} style={styles.primaryButton}>
+        <Text style={styles.primaryButtonText}>{loading ? "Connecting…" : "Connect account"}</Text>
       </Pressable>
-      <Text style={styles.note}>Secure sign-in arrives in the next mobile milestone.</Text>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      <Text style={styles.note}>Sign-in opens securely in your browser and returns you to WörterSee.</Text>
     </View>
   );
 }
@@ -138,4 +140,5 @@ const styles = StyleSheet.create({
   secondaryButton: { alignItems: "center", borderColor: "#173b38", borderRadius: 16, borderWidth: 1, marginTop: 24, paddingVertical: 16 },
   secondaryButtonText: { color: "#173b38", fontSize: 16, fontWeight: "700" },
   note: { color: "#7f8985", fontSize: 13, lineHeight: 19, marginTop: 14, textAlign: "center" },
+  errorText: { color: "#9a431f", fontSize: 14, lineHeight: 20, marginTop: 14, textAlign: "center" },
 });

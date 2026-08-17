@@ -5,7 +5,7 @@ services:
       DATABASE_URL: jdbc:postgresql://postgres:5432/woertersee
       DATABASE_USER: woertersee
       DATABASE_PASSWORD: local-only
-      OIDC_ISSUER_URI: http://localhost:8081/realms/woertersee
+      OIDC_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}/realms/woertersee
       OIDC_JWK_SET_URI: http://keycloak:8080/realms/woertersee/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
       LEGACY_SEED_ENABLED: "true"
@@ -31,7 +31,7 @@ services:
       AUTH_TRUST_HOST: "true"
       AUTH_KEYCLOAK_ID: woertersee-web
       AUTH_KEYCLOAK_SECRET: local-development-only
-      AUTH_KEYCLOAK_ISSUER: http://localhost:8081/realms/woertersee
+      AUTH_KEYCLOAK_ISSUER: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}/realms/woertersee
       AUTH_KEYCLOAK_INTERNAL_ISSUER: http://keycloak:8080/realms/woertersee
     ports: ["3000:3000"]
     depends_on:
@@ -44,7 +44,7 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: local-admin-only
-      KC_HOSTNAME: http://localhost:8081
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}
     ports: ["8081:8080"]
     volumes:
       - ./keycloak/woertersee-realm.json:/opt/keycloak/data/import/woertersee-realm.json:ro
