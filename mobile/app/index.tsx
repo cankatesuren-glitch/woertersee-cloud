@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 
 import { ApiError, getProgressDashboard, type DailyLearningGoal, type TodayPractice } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -87,7 +88,7 @@ function PracticeCard({ today, dailyGoal }: { today: TodayPractice; dailyGoal: D
           ]}
         />
       </View>
-      <Pressable accessibilityRole="button" style={styles.primaryButton}>
+      <Pressable accessibilityRole="button" onPress={() => router.push("/practice")} style={styles.primaryButton}>
         <Text style={styles.primaryButtonText}>{remaining === 0 ? "Review more words" : "Start practice"}</Text>
       </Pressable>
     </View>
