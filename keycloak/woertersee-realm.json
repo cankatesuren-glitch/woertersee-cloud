@@ -33,7 +33,8 @@
       "attributes": {
         "pkce.code.challenge.method": "S256"
       },
-      "defaultClientScopes": ["acr", "roles", "profile", "email", "basic"]
+      "defaultClientScopes": ["acr", "roles", "profile", "email", "basic"],
+      "optionalClientScopes": ["offline_access"]
     }
   ],
   "users": [
