@@ -11,6 +11,7 @@ export default function ProgressDashboard() {
   const [error, setError] = useState("");
   const [activityPeriod, setActivityPeriod] = useState<7 | 30>(7);
   const [savingGoal, setSavingGoal] = useState(false);
+  const [startingToday, setStartingToday] = useState(false);
 
   useEffect(() => {
     fetch("/api/progress")
@@ -71,6 +72,31 @@ export default function ProgressDashboard() {
     }
   }
 
+  async function startToday() {
+    const cards = dashboard?.today?.recommendedCards ?? 0;
+    if (!cards) return;
+    setStartingToday(true);
+    setError("");
+    try {
+      const response = await fetch("/api/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cardCount: cards,
+          direction: "DE_EN",
+          ordering: "RANDOM",
+          unseenOnly: false,
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail);
+      location.href = `/play?session=${body.id}`;
+    } catch {
+      setError("Could not start today’s practice.");
+      setStartingToday(false);
+    }
+  }
+
   if (error)
     return (
       <p role="alert" className="dashboard-error">
@@ -95,6 +121,7 @@ export default function ProgressDashboard() {
   const difficultWords = dashboard.difficultWords ?? [];
   const recentGames = dashboard.recentGames ?? [];
   const dailyGoal = dashboard.dailyGoal;
+  const today = dashboard.today;
   const activityStarted = activityDays.reduce(
     (total, day) => total + (day.gamesStarted ?? 0),
     0,
@@ -126,6 +153,41 @@ export default function ProgressDashboard() {
           </a>
         )}
       </div>
+      <section className="today-panel" aria-labelledby="today-title">
+        <div className="today-copy">
+          <p className="eyebrow">TODAY</p>
+          <h3 id="today-title">
+            {(today?.dueWords ?? 0) > 0
+              ? `${today?.dueWords} words are ready for review.`
+              : "You’re caught up for now."}
+          </h3>
+          <p>
+            {(today?.dueWords ?? 0) > 0
+              ? "Your due words come first, then the deck adds fresh material."
+              : (today?.newWords ?? 0) > 0
+                ? `${today?.newWords} new words are ready when you are.`
+                : today?.nextReviewAt
+                  ? `Next review ${new Date(today.nextReviewAt).toLocaleString()}.`
+                  : "Complete a deck to begin your personal review schedule."}
+          </p>
+        </div>
+        <div className="today-numbers" aria-label="Today's practice summary">
+          <span><strong>{today?.dueWords ?? 0}</strong> due</span>
+          <span><strong>{today?.newWords ?? 0}</strong> new</span>
+        </div>
+        <button
+          className="primary today-start"
+          disabled={startingToday || (today?.recommendedCards ?? 0) === 0}
+          onClick={startToday}
+          type="button"
+        >
+          {startingToday
+            ? "Starting…"
+            : (today?.dueWords ?? 0) > 0
+              ? `Review ${today?.recommendedCards} cards →`
+              : `Learn ${today?.recommendedCards ?? 0} new cards →`}
+        </button>
+      </section>
       <div className="metric-grid">
         <article>
           <strong>{summary?.exploredWords ?? 0}</strong>

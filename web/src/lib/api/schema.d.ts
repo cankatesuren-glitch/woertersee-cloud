@@ -677,6 +677,7 @@ export interface components {
             difficultWords?: components["schemas"]["DifficultWordSummary"][];
             recentGames?: components["schemas"]["RecentGameSummary"][];
             summary?: components["schemas"]["ProgressSummary"];
+            today?: components["schemas"]["TodayPractice"];
         };
         ProgressSummary: {
             /** Format: double */
@@ -727,6 +728,16 @@ export interface components {
             personalWordIds?: string[];
             unseenOnly?: boolean;
             wordIds?: string[];
+        };
+        TodayPractice: {
+            /** Format: int32 */
+            dueWords?: number;
+            /** Format: int32 */
+            newWords?: number;
+            /** Format: date-time */
+            nextReviewAt?: string | null;
+            /** Format: int32 */
+            recommendedCards?: number;
         };
         WordSummary: {
             english?: string;

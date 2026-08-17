@@ -780,6 +780,9 @@
           },
           "summary": {
             "$ref": "#/components/schemas/ProgressSummary"
+          },
+          "today": {
+            "$ref": "#/components/schemas/TodayPractice"
           }
         },
         "type": "object"
@@ -931,6 +934,30 @@
             },
             "type": "array",
             "uniqueItems": true
+          }
+        },
+        "type": "object"
+      },
+      "TodayPractice": {
+        "properties": {
+          "dueWords": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "newWords": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "nextReviewAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recommendedCards": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "type": "object"

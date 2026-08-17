@@ -30,6 +30,9 @@ test("learner signs in, completes a deck and sees results", async ({
   }
   await expect(page.getByText("SESSION COMPLETE")).toBeVisible();
   await page.goto("/");
+  await expect(page.getByText("TODAY", { exact: true })).toBeVisible();
+  await expect(page.locator(".today-numbers span").first()).toContainText("due");
+  await expect(page.locator(".today-numbers span").last()).toContainText("new");
   await expect(page.getByText("games completed", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Your practice rhythm" })).toBeVisible();
   await expect(page.getByRole("button", { name: "7 days" })).toHaveAttribute("aria-pressed", "true");
