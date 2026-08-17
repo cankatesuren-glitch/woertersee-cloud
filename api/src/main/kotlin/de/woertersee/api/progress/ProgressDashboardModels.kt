@@ -30,11 +30,18 @@ data class DailyLearningGoal(
     val percentage: Int,
     val achieved: Boolean,
 )
+data class TodayPractice(
+    val dueWords: Int,
+    val newWords: Int,
+    val nextReviewAt: Instant?,
+    val recommendedCards: Int,
+)
 
 data class ProgressDashboard(
     val summary: ProgressSummary,
     val activity: LearningActivity,
     val dailyGoal: DailyLearningGoal,
+    val today: TodayPractice,
     val activeGame: ActiveGameSummary?,
     val recentGames: List<RecentGameSummary>,
     val difficultWords: List<DifficultWordSummary>,

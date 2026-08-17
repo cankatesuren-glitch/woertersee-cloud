@@ -58,11 +58,39 @@ class ProgressDashboardService(
             summary,
             learningActivity,
             dailyGoal(profileId, learningActivity.days.lastOrNull()?.gamesCompleted ?: 0),
+            today(profileId),
             activeGame(profileId),
             recentGames(profileId),
             difficultWords(profileId),
         )
     }
+
+    private fun today(profileId: UUID): TodayPractice = jdbc.sql(
+        """SELECT
+             count(*) FILTER (WHERE state <> 'UNSEEN' AND next_review_at <= now()) AS due_words,
+             count(*) FILTER (WHERE state IS NULL OR state = 'UNSEEN') AS new_words,
+             min(next_review_at) FILTER (WHERE state <> 'UNSEEN' AND next_review_at > now()) AS next_review_at
+           FROM (
+             SELECT up.state,up.next_review_at
+             FROM words w
+             LEFT JOIN user_progress up ON up.profile_id=:profileId AND up.word_id=w.id
+             WHERE w.deleted_at IS NULL
+             UNION ALL
+             SELECT pwp.state,pwp.next_review_at
+             FROM personal_words pw
+             LEFT JOIN personal_word_progress pwp ON pwp.profile_id=:profileId AND pwp.personal_word_id=pw.id
+             WHERE pw.profile_id=:profileId AND pw.deleted_at IS NULL
+           ) review_pool""",
+    ).param("profileId", profileId).query { result, _ ->
+        val due = result.getInt("due_words")
+        val fresh = result.getInt("new_words")
+        TodayPractice(
+            due,
+            fresh,
+            result.getTimestamp("next_review_at")?.toInstant(),
+            minOf(10, if (due > 0) due else fresh),
+        )
+    }.single()
 
     private fun dailyGoal(profileId: UUID, completedToday: Int): DailyLearningGoal {
         val target = jdbc.sql(
