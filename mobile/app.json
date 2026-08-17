@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "WörterSee",
+    "slug": "woertersee",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "woertersee",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.woertersee.mobile"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Allow WörterSee to securely access your learning session."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
