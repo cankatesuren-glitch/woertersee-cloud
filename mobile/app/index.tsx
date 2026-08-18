@@ -13,6 +13,7 @@ import { router } from "expo-router";
 
 import { ApiError, getProgressDashboard, type DailyLearningGoal, type TodayPractice } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { MobileNav } from "@/components/mobile-nav";
 
 type ScreenState =
   | { kind: "loading" }
@@ -66,6 +67,7 @@ export default function TodayScreen() {
         {state.kind === "ready" && <PracticeCard today={state.today} dailyGoal={state.dailyGoal} />}
         {state.kind === "error" && <ErrorCard message={state.message} retry={load} />}
       </ScrollView>
+      <MobileNav />
     </SafeAreaView>
   );
 }
@@ -125,7 +127,7 @@ function ErrorCard({ message, retry }: { message: string; retry: () => void }) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f6f0e4" },
-  page: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 42, paddingBottom: 40 },
+  page: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 42, paddingBottom: 110 },
   eyebrow: { color: "#9a431f", fontSize: 12, fontWeight: "800", letterSpacing: 2.4 },
   heading: { color: "#173b38", fontFamily: "Georgia", fontSize: 44, lineHeight: 49, marginTop: 18, maxWidth: 330 },
   intro: { color: "#52645f", fontSize: 17, lineHeight: 25, marginTop: 14, marginBottom: 34 },

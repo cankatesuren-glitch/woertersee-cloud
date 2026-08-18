@@ -14,10 +14,27 @@ export type DailyLearningGoal = {
   targetGames: number;
 };
 
-type ProgressDashboard = {
+export type ProgressDashboard = {
   today: TodayPractice;
   dailyGoal: DailyLearningGoal;
+  summary?: {
+    accuracy: number | null;
+    completedGames: number;
+    currentStreakDays: number;
+    difficultWords: number;
+    exploredWords: number;
+    knownWords: number;
+    lastPractisedAt: string | null;
+  };
+  activity?: {
+    gamesCompleted: number;
+    gamesStarted: number;
+    periodDays: number;
+    days: { date: string; gamesStarted: number; gamesCompleted: number }[];
+  };
 };
+
+export type PersonalWord = { id: string; german: string; english: string; category: string | null };
 
 export type GameResult = "KNOWN" | "DIFFICULT";
 
@@ -90,6 +107,13 @@ export async function getProgressDashboard(accessToken: string): Promise<Progres
   }
 
   return response.json() as Promise<ProgressDashboard>;
+}
+
+export async function getPersonalWords(accessToken: string): Promise<PersonalWord[]> {
+  if (!apiUrl) throw new ApiError("EXPO_PUBLIC_API_URL is not configured.");
+  const response = await fetch(`${apiUrl}/api/v1/personal-words`, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!response.ok) throw new ApiError("Your saved words could not be loaded.", response.status);
+  return response.json() as Promise<PersonalWord[]>;
 }
 
 async function gameRequest(
