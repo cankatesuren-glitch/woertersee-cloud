@@ -157,13 +157,15 @@ class GameService(private val jdbc: JdbcClient) {
                 .param("owner",profileId).param("ids",request.personalWordIds)
                 .query{rs,_->WordCandidate(rs.getObject("id",UUID::class.java),"PERSONAL",rs.getString("german"),rs.getString("english"),emptyList())}.list()
         }
-        if(request.wordIds.isNotEmpty()||request.personalWordIds.isNotEmpty())return exact.distinctBy{it.source to it.id}
+        if (request.categoryIds.isNotEmpty()) {
+            exact += queryWords(
+                "w.deleted_at IS NULL AND EXISTS (SELECT 1 FROM word_categories wc WHERE wc.word_id=w.id AND wc.category_id IN (:categoryIds))",
+                mapOf("categoryIds" to request.categoryIds, "profileId" to profileId),
+            )
+        }
+        if(exact.isNotEmpty())return exact.distinctBy{it.source to it.id}
         val clauses = mutableListOf("w.deleted_at IS NULL")
         val params = mutableMapOf<String, Any>("profileId" to profileId)
-        if (request.categoryIds.isNotEmpty()) {
-            clauses += "EXISTS (SELECT 1 FROM word_categories wc WHERE wc.word_id=w.id AND wc.category_id IN (:categoryIds))"
-            params["categoryIds"] = request.categoryIds
-        }
         if (request.unseenOnly) clauses += "(up.id IS NULL OR up.state='UNSEEN')"
         return queryWords(clauses.joinToString(" AND "), params)
     }

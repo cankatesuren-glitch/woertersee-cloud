@@ -34,7 +34,7 @@ export type ProgressDashboard = {
   };
 };
 
-export type PersonalWord = { id: string; german: string; english: string; category: string | null };
+export type PersonalWord = { id: string; german: string; english: string; category: string | null; description: string | null };
 
 export type GameResult = "KNOWN" | "DIFFICULT";
 
@@ -76,6 +76,7 @@ export type VocabularyWord = {
 
 export type DeckOptions = {
   wordIds: string[];
+  personalWordIds: string[];
   categoryIds: string[];
   cardCount: number;
   direction: "DE_EN" | "EN_DE";
@@ -118,7 +119,7 @@ export async function getPersonalWords(accessToken: string): Promise<PersonalWor
 
 export async function createPersonalWord(
   accessToken: string,
-  word: { german: string; english: string; category: string | null },
+  word: { german: string; english: string; category: string | null; description: string | null },
 ): Promise<PersonalWord> {
   if (!apiUrl) throw new ApiError("EXPO_PUBLIC_API_URL is not configured.");
   const response = await fetch(`${apiUrl}/api/v1/personal-words`, {
@@ -190,7 +191,7 @@ export function startPractice(accessToken: string, options: DeckOptions): Promis
     "/api/v1/games",
     {
       method: "POST",
-      body: JSON.stringify({ ...options, personalWordIds: [] }),
+      body: JSON.stringify(options),
     },
     "A practice round could not be started.",
   );
