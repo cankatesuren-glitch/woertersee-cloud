@@ -35,12 +35,12 @@ class AiDeckServiceTest {
     }
 
     @Test
-    fun `duplicate generated cards are rejected`() {
+    fun `duplicate generated cards are collapsed when fewer unique cards are available`() {
         val card = AiDeckCard("der Bahnhof", "station")
         val generator = AiDeckGenerator { AiDeckPreview("Travel", "Travel", listOf(card, card)) }
 
-        assertThrows<IllegalArgumentException> {
-            AiDeckService(generator, words).generate(GenerateAiDeckRequest("travel", cardCount = 2))
-        }
+        val result = AiDeckService(generator, words).generate(GenerateAiDeckRequest("travel", cardCount = 2))
+
+        assertEquals(listOf("der Bahnhof"), result.cards.map(AiDeckCard::german))
     }
 }

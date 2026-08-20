@@ -11,7 +11,7 @@ class AiDeckService(private val generator: AiDeckGenerator, private val personal
     fun generate(request: GenerateAiDeckRequest): AiDeckPreview {
         val preview = generator.generate(request)
         val cards = preview.cards.map(::clean).distinctBy { it.german.lowercase() }
-        require(cards.size >= request.cardCount) { "AI response did not contain ${request.cardCount} unique valid cards" }
+        require(cards.isNotEmpty()) { "AI response did not contain any valid cards" }
         return preview.copy(title = preview.title.ifBlank { request.topic.trim() }, cards = cards.take(request.cardCount))
     }
 
