@@ -44,6 +44,9 @@ springdoc:
     display-request-duration: true
     operations-sorter: method
 woertersee:
+  ai:
+    ollama-url: ${OLLAMA_URL:http://localhost:11434}
+    model: ${OLLAMA_MODEL:qwen3:4b}
   outbox:
     enabled: ${OUTBOX_ENABLED:true}
     topic: ${OUTBOX_TOPIC:woertersee.domain-events.v1}
