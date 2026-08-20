@@ -14,10 +14,27 @@ export type DailyLearningGoal = {
   targetGames: number;
 };
 
-type ProgressDashboard = {
+export type ProgressDashboard = {
   today: TodayPractice;
   dailyGoal: DailyLearningGoal;
+  summary?: {
+    accuracy: number | null;
+    completedGames: number;
+    currentStreakDays: number;
+    difficultWords: number;
+    exploredWords: number;
+    knownWords: number;
+    lastPractisedAt: string | null;
+  };
+  activity?: {
+    gamesCompleted: number;
+    gamesStarted: number;
+    periodDays: number;
+    days: { date: string; gamesStarted: number; gamesCompleted: number }[];
+  };
 };
+
+export type PersonalWord = { id: string; german: string; english: string; category: string | null; description: string | null };
 
 export type GameResult = "KNOWN" | "DIFFICULT";
 
@@ -59,6 +76,7 @@ export type VocabularyWord = {
 
 export type DeckOptions = {
   wordIds: string[];
+  personalWordIds: string[];
   categoryIds: string[];
   cardCount: number;
   direction: "DE_EN" | "EN_DE";
@@ -90,6 +108,36 @@ export async function getProgressDashboard(accessToken: string): Promise<Progres
   }
 
   return response.json() as Promise<ProgressDashboard>;
+}
+
+export async function getPersonalWords(accessToken: string): Promise<PersonalWord[]> {
+  if (!apiUrl) throw new ApiError("EXPO_PUBLIC_API_URL is not configured.");
+  const response = await fetch(`${apiUrl}/api/v1/personal-words`, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!response.ok) throw new ApiError("Your saved words could not be loaded.", response.status);
+  return response.json() as Promise<PersonalWord[]>;
+}
+
+export async function createPersonalWord(
+  accessToken: string,
+  word: { german: string; english: string; category: string | null; description: string | null },
+): Promise<PersonalWord> {
+  if (!apiUrl) throw new ApiError("EXPO_PUBLIC_API_URL is not configured.");
+  const response = await fetch(`${apiUrl}/api/v1/personal-words`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify(word),
+  });
+  if (!response.ok) throw new ApiError("The word could not be added.", response.status);
+  return response.json() as Promise<PersonalWord>;
+}
+
+export async function deletePersonalWord(accessToken: string, id: string): Promise<void> {
+  if (!apiUrl) throw new ApiError("EXPO_PUBLIC_API_URL is not configured.");
+  const response = await fetch(`${apiUrl}/api/v1/personal-words/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) throw new ApiError("The word could not be removed.", response.status);
 }
 
 async function gameRequest(
@@ -143,7 +191,7 @@ export function startPractice(accessToken: string, options: DeckOptions): Promis
     "/api/v1/games",
     {
       method: "POST",
-      body: JSON.stringify({ ...options, personalWordIds: [] }),
+      body: JSON.stringify(options),
     },
     "A practice round could not be started.",
   );

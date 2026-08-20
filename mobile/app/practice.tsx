@@ -4,11 +4,12 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-  answerPracticeCard, ApiError, finishPractice, getVocabulary, replayPractice, reviewPractice,
+  answerPracticeCard, ApiError, finishPractice, getPersonalWords, getVocabulary, replayPractice, reviewPractice,
   startPractice, type DeckOptions, type GameResult, type GameSession,
-  type VocabularyCategory, type VocabularyWord,
+  type PersonalWord, type VocabularyCategory, type VocabularyWord,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { MobileNav } from "@/components/mobile-nav";
 
 type DeckMode = "quick" | "category" | "words";
 type State = { kind: "builder" | "loading" } | { kind: "playing"; game: GameSession; index: number } |
@@ -19,12 +20,13 @@ export default function PracticeScreen() {
   const [state, setState] = useState<State>({ kind: "builder" });
   const [categories, setCategories] = useState<VocabularyCategory[]>([]);
   const [words, setWords] = useState<VocabularyWord[]>([]);
+  const [personalWords, setPersonalWords] = useState<PersonalWord[]>([]);
   const [catalogueError, setCatalogueError] = useState("");
   const [revealed, setRevealed] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    getVocabulary().then((data) => { setCategories(data.categories); setWords(data.words); })
+    Promise.all([getVocabulary(), token().then(getPersonalWords)]).then(([data, ownWords]) => { setCategories(data.categories); setWords(data.words); setPersonalWords(ownWords); })
       .catch((error) => setCatalogueError(messageFor(error)));
   }, []);
 
@@ -83,17 +85,18 @@ export default function PracticeScreen() {
     <View style={s.top}><Pressable onPress={() => router.back()}><Text style={s.back}>← Today</Text></Pressable>
       {state.kind === "playing" && <Pressable disabled={saving} onPress={finish}><Text style={s.finish}>Finish session</Text></Pressable>}
     </View>
-    {state.kind === "builder" && <Builder categories={categories} words={words} error={catalogueError} start={begin} />}
+    {state.kind === "builder" && <Builder categories={categories} words={words} personalWords={personalWords} error={catalogueError} start={begin} />}
     {state.kind === "loading" && <ActivityIndicator style={s.loader} color="#bd5b3d" />}
     {state.kind === "playing" && <Round state={state} revealed={revealed} saving={saving} reveal={() => setRevealed(!revealed)} answer={answer} />}
     {state.kind === "complete" && <Results game={state.game} next={continueWith} another={() => setState({ kind: "builder" })} />}
     {state.kind === "error" && <Panel label="PRACTICE PAUSED" title="That deck did not load." copy={state.message} action="Back to deck builder" onPress={() => setState({ kind: "builder" })} />}
-  </ScrollView></SafeAreaView>;
+  </ScrollView>{state.kind === "builder" && <MobileNav />}</SafeAreaView>;
 }
 
-function Builder({ categories, words, error, start }: { categories: VocabularyCategory[]; words: VocabularyWord[]; error: string; start: (o: DeckOptions) => void }) {
+function Builder({ categories, words, personalWords, error, start }: { categories: VocabularyCategory[]; words: VocabularyWord[]; personalWords: PersonalWord[]; error: string; start: (o: DeckOptions) => void }) {
   const [mode, setMode] = useState<DeckMode>("quick");
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [personalCategories, setPersonalCategories] = useState<string[]>([]);
   const [wordIds, setWordIds] = useState<string[]>([]);
   const [cardCountInput, setCardCountInput] = useState("10");
   const [direction, setDirection] = useState<DeckOptions["direction"]>("DE_EN");
@@ -107,14 +110,16 @@ function Builder({ categories, words, error, start }: { categories: VocabularyCa
   const toggle = (id: string, values: string[], update: (v: string[]) => void) => update(values.includes(id) ? values.filter((v) => v !== id) : [...values, id]);
   const cardCount = Number(cardCountInput);
   const validCardCount = Number.isInteger(cardCount) && cardCount >= 1 && cardCount <= 100;
-  const enabled = validCardCount && (mode === "quick" || (mode === "category" ? !!categoryIds.length : !!wordIds.length));
+  const ownCategories = Array.from(new Set(personalWords.map((word) => word.category).filter((value): value is string => Boolean(value))));
+  const selectedPersonalWordIds = personalWords.filter((word) => word.category && personalCategories.includes(word.category)).map((word) => word.id);
+  const enabled = validCardCount && (mode === "quick" || (mode === "category" ? !!(categoryIds.length || personalCategories.length) : !!wordIds.length));
 
   return <>
     <Text style={s.eyebrow}>BUILD A DECK</Text><Text style={s.title}>What do you want to practise?</Text>
     <View style={s.tabs}><Tab active={mode === "quick"} label="Quick" press={() => setMode("quick")} /><Tab active={mode === "category"} label="Categories" press={() => setMode("category")} /><Tab active={mode === "words"} label="Pick words" press={() => setMode("words")} /></View>
     <View style={s.builder}>
       {mode === "quick" && <><Text style={s.optionTitle}>Smart review mix</Text><Text style={s.copy}>Words due today come first, followed by new material.</Text><View style={s.switchRow}><View style={{ flex: 1 }}><Text style={s.optionTitle}>New words only</Text><Text style={s.copy}>Skip scheduled reviews.</Text></View><Switch value={unseenOnly} onValueChange={setUnseenOnly} trackColor={{ true: "#87a591" }} /></View></>}
-      {mode === "category" && <View style={s.list}>{categories.map((c) => <Choice key={c.id} selected={categoryIds.includes(c.id)} title={c.name} subtitle={`${c.wordCount} words`} press={() => toggle(c.id, categoryIds, setCategoryIds)} />)}</View>}
+      {mode === "category" && <View style={s.list}>{categories.map((c) => <Choice key={c.id} selected={categoryIds.includes(c.id)} title={c.name} subtitle={`${c.wordCount} words`} press={() => toggle(c.id, categoryIds, setCategoryIds)} />)}{ownCategories.map((name) => { const count = personalWords.filter((word) => word.category === name).length; return <Choice key={`personal-${name}`} selected={personalCategories.includes(name)} title={name} subtitle={`${count} personal word${count === 1 ? "" : "s"}`} press={() => toggle(name, personalCategories, setPersonalCategories)} />; })}</View>}
       {mode === "words" && <><TextInput accessibilityLabel="Search words" placeholder="Search German or English" placeholderTextColor="#87918d" value={search} onChangeText={setSearch} style={s.search} /><Text style={s.count}>{wordIds.length} selected · showing {visible.length}</Text><View style={s.list}>{visible.map((w) => <Choice key={w.id} selected={wordIds.includes(w.id)} title={w.german} subtitle={w.english} disabled={!wordIds.includes(w.id) && wordIds.length >= 100} press={() => toggle(w.id, wordIds, setWordIds)} />)}</View></>}
       <Label text="CARDS" />
       {mode === "words" ? <Text style={s.count}>{wordIds.length} selected</Text> : <>
@@ -125,7 +130,7 @@ function Builder({ categories, words, error, start }: { categories: VocabularyCa
       <Label text="DIRECTION" /><View style={s.row}><Chip active={direction === "DE_EN"} label="German → English" press={() => setDirection("DE_EN")} /><Chip active={direction === "EN_DE"} label="English → German" press={() => setDirection("EN_DE")} /></View>
       <Label text="ORDER" /><View style={s.row}><Chip active={ordering === "RANDOM"} label="Random" press={() => setOrdering("RANDOM")} /><Chip active={ordering === "AZ"} label="A–Z" press={() => setOrdering("AZ")} /></View>
       {!!error && <Text style={s.error}>{error}</Text>}
-      <Pressable disabled={!enabled} style={[s.primary, !enabled && s.disabled]} onPress={() => start({ wordIds: mode === "words" ? wordIds : [], categoryIds: mode === "category" ? categoryIds : [], cardCount: mode === "words" ? wordIds.length : cardCount, direction, ordering, unseenOnly: mode === "quick" && unseenOnly })}><Text style={s.primaryText}>Start deck →</Text></Pressable>
+      <Pressable disabled={!enabled} style={[s.primary, !enabled && s.disabled]} onPress={() => start({ wordIds: mode === "words" ? wordIds : [], personalWordIds: mode === "category" ? selectedPersonalWordIds : [], categoryIds: mode === "category" ? categoryIds : [], cardCount: mode === "words" ? wordIds.length : cardCount, direction, ordering, unseenOnly: mode === "quick" && unseenOnly })}><Text style={s.primaryText}>Start deck →</Text></Pressable>
     </View>
   </>;
 }
@@ -150,7 +155,7 @@ function Panel({ label, title, copy, action, onPress }: { label: string; title: 
 function messageFor(error: unknown) { return error instanceof ApiError ? error.message : "Practice could not be loaded. Check that the local services are running."; }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f6f0e4" }, page: { flexGrow: 1, padding: 24, paddingTop: 18, paddingBottom: 50 }, top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }, back: { color: "#173b38", fontSize: 16, fontWeight: "700" }, finish: { color: "#9a431f", fontSize: 15, fontWeight: "700" }, loader: { marginTop: 180 },
+  safe: { flex: 1, backgroundColor: "#f6f0e4" }, page: { flexGrow: 1, padding: 24, paddingTop: 18, paddingBottom: 110 }, top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }, back: { color: "#173b38", fontSize: 16, fontWeight: "700" }, finish: { color: "#9a431f", fontSize: 15, fontWeight: "700" }, loader: { marginTop: 180 },
   eyebrow: { color: "#bd5b3d", fontSize: 12, fontWeight: "800", letterSpacing: 2 }, title: { color: "#173b38", fontFamily: "Georgia", fontSize: 34, lineHeight: 40, marginTop: 12 }, tabs: { backgroundColor: "#e6dfd2", borderRadius: 14, flexDirection: "row", marginTop: 22, padding: 4 }, tab: { alignItems: "center", borderRadius: 11, flex: 1, paddingVertical: 11 }, tabActive: { backgroundColor: "#fffdf8" }, tabText: { color: "#687570", fontSize: 13, fontWeight: "700" }, tabTextActive: { color: "#173b38" },
   builder: { backgroundColor: "#fffdf8", borderColor: "#ded5c4", borderRadius: 24, borderWidth: 1, marginTop: 18, padding: 20 }, optionTitle: { color: "#173b38", fontSize: 15, fontWeight: "700" }, copy: { color: "#63716d", fontSize: 13, lineHeight: 19, marginTop: 3 }, switchRow: { alignItems: "center", borderTopColor: "#e8e1d6", borderTopWidth: 1, flexDirection: "row", marginTop: 18, paddingTop: 18 },
   list: { gap: 9 }, choice: { alignItems: "center", borderColor: "#ded5c4", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 12 }, choiceActive: { backgroundColor: "#edf3ed", borderColor: "#87a591" }, check: { alignItems: "center", borderColor: "#9ba5a0", borderRadius: 6, borderWidth: 1, height: 22, justifyContent: "center", width: 22 }, checkActive: { backgroundColor: "#173b38", borderColor: "#173b38" }, checkText: { color: "#fff", fontWeight: "800" },

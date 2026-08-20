@@ -1,0 +1,15 @@
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { MobileNav } from "@/components/mobile-nav";
+import { ApiError, getProgressDashboard, type ProgressDashboard } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+
+export default function ProgressScreen() {
+  const auth = useAuth(); const [data, setData] = useState<ProgressDashboard>(); const [loading, setLoading] = useState(true); const [error, setError] = useState("");
+  const load = useCallback(async () => { setError(""); try { const token = await auth.getAccessToken(); if (!token) throw new ApiError("Connect your account to see progress."); setData(await getProgressDashboard(token)); } catch (e) { setError(e instanceof ApiError ? e.message : "Progress could not be loaded."); } finally { setLoading(false); } }, [auth]);
+  useEffect(() => { void load(); }, [load]); const summary = data?.summary;
+  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}><Text style={s.eyebrow}>PROGRESS</Text><Text style={s.title}>Keep the rhythm going.</Text>{loading && <ActivityIndicator color="#bd5b3d" style={{ marginTop: 40 }} />}{!!error && <Text style={s.error}>{error}</Text>}{summary && <><View style={s.hero}><Text style={s.big}>{summary.currentStreakDays}</Text><Text style={s.heroTitle}>day streak</Text><Text style={s.copy}>{summary.completedGames} completed games</Text></View><View style={s.grid}><Stat value={summary.exploredWords} label="explored" /><Stat value={summary.knownWords} label="known" /><Stat value={summary.difficultWords} label="difficult" /><Stat value={summary.accuracy == null ? "—" : `${summary.accuracy.toFixed(0)}%`} label="accuracy" /></View></>}</ScrollView><MobileNav /></SafeAreaView>;
+}
+function Stat({ value, label }: { value: number | string; label: string }) { return <View style={s.stat}><Text style={s.statValue}>{value}</Text><Text style={s.copy}>{label}</Text></View>; }
+const s = StyleSheet.create({ safe: { flex: 1, backgroundColor: "#f6f0e4" }, page: { padding: 24, paddingTop: 42, paddingBottom: 110 }, eyebrow: { color: "#9a431f", fontSize: 12, fontWeight: "800", letterSpacing: 2 }, title: { color: "#173b38", fontFamily: "Georgia", fontSize: 40, lineHeight: 46, marginTop: 14 }, hero: { backgroundColor: "#173b38", borderRadius: 24, marginTop: 28, padding: 24 }, big: { color: "#fffdf8", fontFamily: "Georgia", fontSize: 58 }, heroTitle: { color: "#fffdf8", fontSize: 18, fontWeight: "700" }, copy: { color: "#87958f", fontSize: 13, marginTop: 5 }, grid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 }, stat: { backgroundColor: "#fffdf8", borderColor: "#ded5c4", borderRadius: 18, borderWidth: 1, padding: 18, width: "48%" }, statValue: { color: "#173b38", fontFamily: "Georgia", fontSize: 30 }, error: { color: "#9a431f", marginTop: 24 } });

@@ -1,0 +1,10 @@
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { MobileNav } from "@/components/mobile-nav";
+import { useAuth } from "@/lib/auth";
+
+export default function SettingsScreen() {
+  const auth = useAuth();
+  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}><Text style={s.eyebrow}>SETTINGS</Text><Text style={s.title}>Make it yours.</Text><View style={s.card}><Text style={s.cardTitle}>WörterSee account</Text><Text style={s.copy}>{auth.signedIn ? "Your progress is securely connected." : "Connect to sync your learning progress."}</Text><Pressable onPress={auth.signedIn ? auth.signOut : auth.signIn} style={auth.signedIn ? s.secondary : s.primary}><Text style={auth.signedIn ? s.secondaryText : s.primaryText}>{auth.signedIn ? "Sign out" : "Connect account"}</Text></Pressable></View><View style={s.card}><Text style={s.cardTitle}>Practice preferences</Text><Text style={s.copy}>Daily goals and reminder controls will be available here in the next mobile update.</Text></View></ScrollView><MobileNav /></SafeAreaView>;
+}
+const s = StyleSheet.create({ safe: { flex: 1, backgroundColor: "#f6f0e4" }, page: { padding: 24, paddingTop: 42, paddingBottom: 110 }, eyebrow: { color: "#9a431f", fontSize: 12, fontWeight: "800", letterSpacing: 2 }, title: { color: "#173b38", fontFamily: "Georgia", fontSize: 40, lineHeight: 46, marginTop: 14, marginBottom: 26 }, card: { backgroundColor: "#fffdf8", borderColor: "#ded5c4", borderRadius: 20, borderWidth: 1, marginBottom: 12, padding: 20 }, cardTitle: { color: "#173b38", fontSize: 17, fontWeight: "700" }, copy: { color: "#63716d", fontSize: 14, lineHeight: 21, marginTop: 8 }, primary: { alignItems: "center", backgroundColor: "#173b38", borderRadius: 14, marginTop: 18, paddingVertical: 15 }, primaryText: { color: "#fffdf8", fontWeight: "700" }, secondary: { alignItems: "center", borderColor: "#9a431f", borderRadius: 14, borderWidth: 1, marginTop: 18, paddingVertical: 15 }, secondaryText: { color: "#9a431f", fontWeight: "700" } });
