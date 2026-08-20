@@ -116,6 +116,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai/decks/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai/decks/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/feedback": {
         parameters: {
             query?: never;
@@ -461,6 +493,24 @@ export interface components {
             /** Format: int64 */
             version?: number;
         };
+        AiDeckCard: {
+            description?: string | null;
+            english: string;
+            german: string;
+            perfect?: string | null;
+            preterite?: string | null;
+        };
+        AiDeckImportResult: {
+            /** Format: int32 */
+            added?: number;
+            /** Format: int32 */
+            skipped?: number;
+        };
+        AiDeckPreview: {
+            cards?: components["schemas"]["AiDeckCard"][];
+            category?: string;
+            title?: string;
+        };
         AnswerCardRequest: {
             /** @enum {string} */
             result?: "KNOWN" | "DIFFICULT";
@@ -626,6 +676,17 @@ export interface components {
             status?: string;
             /** @enum {string} */
             type?: "ORIGINAL" | "REVIEW" | "REPLAY";
+        };
+        GenerateAiDeckRequest: {
+            /** Format: int32 */
+            cardCount?: number;
+            category?: string | null;
+            level?: string;
+            topic: string;
+        };
+        ImportAiDeckRequest: {
+            cards?: components["schemas"]["AiDeckCard"][];
+            category?: string | null;
         };
         LearningActivity: {
             days?: components["schemas"]["LearningActivityDay"][];
@@ -1012,6 +1073,54 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    generate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateAiDeckRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AiDeckPreview"];
+                };
+            };
+        };
+    };
+    import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportAiDeckRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AiDeckImportResult"];
+                };
             };
         };
     };
