@@ -56,6 +56,7 @@ class OllamaAiDeckGenerator(
             mapOf(
                 "model" to model,
                 "stream" to false,
+                "think" to false,
                 "format" to schema,
                 "options" to mapOf("temperature" to 0),
                 "messages" to listOf(mapOf("role" to "user", "content" to prompt)),
