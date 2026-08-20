@@ -13,6 +13,18 @@ type Preview = { title: string; category: string; cards: Card[] };
 
 const levels = ["A1", "A2", "B1", "B2", "C1"];
 
+async function readResponse(response: Response) {
+  const text = await response.text();
+  if (!text) {
+    throw new Error(`The server returned an empty response (${response.status}).`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`The server returned an unreadable response (${response.status}).`);
+  }
+}
+
 export default function AiDeckStudio() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -24,20 +36,26 @@ export default function AiDeckStudio() {
     setGenerating(true);
     setMessage("");
     const data = new FormData(event.currentTarget);
-    const response = await fetch("/api/ai/decks/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        topic: data.get("topic"),
-        level: data.get("level"),
-        cardCount: Number(data.get("cardCount")),
-        category: data.get("category") || null,
-      }),
-    });
-    const body = await response.json();
-    if (response.ok) setPreview(body);
-    else setMessage(body.detail ?? "The deck could not be generated.");
-    setGenerating(false);
+    try {
+      const response = await fetch("/api/ai/decks/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: data.get("topic"),
+          level: data.get("level"),
+          cardCount: Number(data.get("cardCount")),
+          category: data.get("category") || null,
+        }),
+        signal: AbortSignal.timeout(120_000),
+      });
+      const body = await readResponse(response);
+      if (response.ok) setPreview(body);
+      else setMessage(body.detail ?? "The deck could not be generated.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The deck could not be generated.");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   function update(index: number, field: keyof Card, value: string) {
@@ -65,17 +83,23 @@ export default function AiDeckStudio() {
     if (!preview?.cards.length) return;
     setSaving(true);
     setMessage("");
-    const response = await fetch("/api/ai/decks/import", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category: preview.category, cards: preview.cards }),
-    });
-    const body = await response.json();
-    if (response.ok) {
-      setMessage(`${body.added} cards saved · ${body.skipped} duplicates skipped.`);
-      setPreview(null);
-    } else setMessage(body.detail ?? "The reviewed cards could not be saved.");
-    setSaving(false);
+    try {
+      const response = await fetch("/api/ai/decks/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: preview.category, cards: preview.cards }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const body = await readResponse(response);
+      if (response.ok) {
+        setMessage(`${body.added} cards saved · ${body.skipped} duplicates skipped.`);
+        setPreview(null);
+      } else setMessage(body.detail ?? "The reviewed cards could not be saved.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The reviewed cards could not be saved.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
