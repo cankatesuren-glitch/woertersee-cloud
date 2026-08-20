@@ -133,7 +133,7 @@ export default function AiDeckStudio() {
               <div className="ai-card-fields">
                 <label>German<input value={card.german} onChange={event => update(index, "german", event.target.value)} /></label>
                 <label>English<input value={card.english} onChange={event => update(index, "english", event.target.value)} /></label>
-                <label className="wide">Usage note<textarea rows={2} value={card.description ?? ""} onChange={event => update(index, "description", event.target.value)} /></label>
+                <label className="wide">Usage note <span>(optional)</span><textarea rows={2} value={card.description ?? ""} onChange={event => update(index, "description", event.target.value)} /></label>
                 {(card.preterite || card.perfect) && <div className="ai-forms wide"><label>Präteritum<input value={card.preterite ?? ""} onChange={event => update(index, "preterite", event.target.value)} /></label><label>Perfekt<input value={card.perfect ?? ""} onChange={event => update(index, "perfect", event.target.value)} /></label></div>}
               </div>
               <button className="ai-remove" onClick={() => remove(index)} aria-label={`Remove ${card.german}`}>Remove</button>
