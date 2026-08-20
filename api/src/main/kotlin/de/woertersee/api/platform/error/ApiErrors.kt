@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 class NotFoundException(message: String) : RuntimeException(message)
 class ConflictException(message: String) : RuntimeException(message)
+class ExternalServiceException(message: String) : RuntimeException(message)
 
 @RestControllerAdvice
 class ApiErrorHandler {
@@ -17,10 +18,12 @@ class ApiErrorHandler {
     @ExceptionHandler(ConflictException::class)
     fun conflict(error: ConflictException) = problem(HttpStatus.CONFLICT, error.message ?: "Request conflicts with current state")
 
+    @ExceptionHandler(ExternalServiceException::class)
+    fun externalService(error: ExternalServiceException) = problem(HttpStatus.SERVICE_UNAVAILABLE, error.message ?: "External service unavailable")
+
     @ExceptionHandler(IllegalArgumentException::class, MethodArgumentNotValidException::class)
     fun invalid(error: Exception) = problem(HttpStatus.BAD_REQUEST, error.message ?: "Invalid request")
 
     private fun problem(status: HttpStatus, detail: String) =
         ProblemDetail.forStatusAndDetail(status, detail).apply { title = status.reasonPhrase }
 }
-
