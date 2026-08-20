@@ -138,6 +138,79 @@
         },
         "type": "object"
       },
+      "AiDeckCard": {
+        "properties": {
+          "description": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "english": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "german": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "perfect": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "preterite": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "english",
+          "german"
+        ],
+        "type": "object"
+      },
+      "AiDeckImportResult": {
+        "properties": {
+          "added": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "skipped": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AiDeckPreview": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/AiDeckCard"
+            },
+            "type": "array"
+          },
+          "category": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "AnswerCardRequest": {
         "properties": {
           "result": {
@@ -616,6 +689,59 @@
               "REPLAY"
             ],
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "GenerateAiDeckRequest": {
+        "properties": {
+          "cardCount": {
+            "format": "int32",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "category": {
+            "maxLength": 140,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "level": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "topic": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic"
+        ],
+        "type": "object"
+      },
+      "ImportAiDeckRequest": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/AiDeckCard"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "type": "array"
+          },
+          "category": {
+            "maxLength": 140,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "type": "object"
@@ -1464,6 +1590,76 @@
         ],
         "tags": [
           "admin-vocabulary-controller"
+        ]
+      }
+    },
+    "/api/v1/ai/decks/generate": {
+      "post": {
+        "operationId": "generate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateAiDeckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDeckPreview"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "ai-deck-controller"
+        ]
+      }
+    },
+    "/api/v1/ai/decks/import": {
+      "post": {
+        "operationId": "import",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportAiDeckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDeckImportResult"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "ai-deck-controller"
         ]
       }
     },
