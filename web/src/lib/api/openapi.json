@@ -670,6 +670,14 @@
               "null"
             ]
           },
+          "description": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "english": {
             "maxLength": 255,
             "minLength": 0,
@@ -690,6 +698,12 @@
       "PersonalWordView": {
         "properties": {
           "category": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
             "type": [
               "string",
               "null"
@@ -2235,7 +2249,7 @@
   "servers": [
     {
       "description": "Generated server url",
-      "url": "http://localhost:8080"
+      "url": "http://localhost:18081"
     }
   ]
 }

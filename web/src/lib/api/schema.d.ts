@@ -646,11 +646,13 @@ export interface components {
         };
         PersonalWordRequest: {
             category?: string | null;
+            description?: string | null;
             english: string;
             german: string;
         };
         PersonalWordView: {
             category?: string | null;
+            description?: string | null;
             english?: string;
             german?: string;
             /** Format: uuid */
