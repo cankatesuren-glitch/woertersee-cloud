@@ -25,6 +25,14 @@ if (contract.info?.title !== "WörterSee Cloud API") {
   throw new Error("The downloaded contract is not the WörterSee Cloud API");
 }
 
+// Keep the checked-in contract independent of the port used to generate it.
+contract.servers = [
+  {
+    description: "Generated server url",
+    url: "http://localhost:8080",
+  },
+];
+
 await mkdir(dirname(output), { recursive: true });
 await writeFile(output, `${JSON.stringify(sortKeys(contract), null, 2)}\n`);
 console.log(`Saved ${source} to ${output}`);
