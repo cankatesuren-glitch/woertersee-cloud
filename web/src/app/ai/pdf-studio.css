@@ -1,0 +1,27 @@
+.ai-controls {
+  border-right: 1px solid #d9d2c3;
+}
+
+.ai-controls .ai-form {
+  border-right: 0;
+}
+
+.ai-pdf-form {
+  border-top: 1px solid #d9d2c3;
+}
+
+.ai-pdf-form input[type="file"] {
+  font-family: inherit;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .ai-controls {
+    border-right: 0;
+    border-bottom: 1px solid #d9d2c3;
+  }
+
+  .ai-controls .ai-form {
+    border-bottom: 0;
+  }
+}

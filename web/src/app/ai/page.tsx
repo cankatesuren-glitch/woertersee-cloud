@@ -1,6 +1,7 @@
 import { auth, signIn } from "@/auth";
 import AiDeckStudio from "./studio";
 import "./studio.css";
+import "./pdf-studio.css";
 
 export const dynamic = "force-dynamic";
 
