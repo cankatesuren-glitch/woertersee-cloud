@@ -10,9 +10,9 @@ import java.util.UUID
 class AiDeckService(private val generator: AiDeckGenerator, private val personalWords: PersonalWordService) {
     fun generate(request: GenerateAiDeckRequest): AiDeckPreview {
         val preview = generator.generate(request)
-        val cards = preview.cards.map(::clean).distinctBy { "${it.german.lowercase()}\u0000${it.english.lowercase()}" }
-        require(cards.size == request.cardCount) { "AI response did not contain ${request.cardCount} unique valid cards" }
-        return preview.copy(title = preview.title.ifBlank { request.topic.trim() }, cards = cards)
+        val cards = preview.cards.map(::clean).distinctBy { it.german.lowercase() }
+        require(cards.isNotEmpty()) { "AI response did not contain any valid cards" }
+        return preview.copy(title = preview.title.ifBlank { request.topic.trim() }, cards = cards.take(request.cardCount))
     }
 
     fun import(owner: UUID, request: ImportAiDeckRequest): AiDeckImportResult {

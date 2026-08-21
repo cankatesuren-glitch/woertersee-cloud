@@ -13,6 +13,7 @@ export default async function Home() {
           Wörter<span>See</span>
         </a>
         <div className="navlinks">
+          <a href="/ai">AI deck studio</a>
           <a href="/words">My words</a>
           <a href="/feedback">Feedback</a>
           <a href="/settings">Settings</a>
