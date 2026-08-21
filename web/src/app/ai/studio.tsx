@@ -47,7 +47,7 @@ export default function AiDeckStudio() {
           cardCount: Number(data.get("cardCount")),
           category: data.get("category") || null,
         }),
-        signal: AbortSignal.timeout(120_000),
+        signal: AbortSignal.timeout(180_000),
       });
       const body = await readResponse(response);
       if (response.ok) setPreview(body);
@@ -70,7 +70,7 @@ export default function AiDeckStudio() {
       const response = await fetch("/api/ai/decks/generate-from-pdf", {
         method: "POST",
         body: data,
-        signal: AbortSignal.timeout(120_000),
+        signal: AbortSignal.timeout(180_000),
       });
       const body = await readResponse(response);
       if (response.ok) setPreview(body);

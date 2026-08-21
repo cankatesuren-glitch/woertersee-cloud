@@ -2,6 +2,7 @@ package de.woertersee.api.ai
 
 import de.woertersee.api.identity.CurrentProfileService
 import jakarta.validation.Valid
+import org.springframework.http.MediaType
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.PostMapping
@@ -24,7 +25,7 @@ class AiDeckController(
         return decks.generate(request)
     }
 
-    @PostMapping("/generate-from-pdf")
+    @PostMapping("/generate-from-pdf", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun generateFromPdf(
         @AuthenticationPrincipal jwt: Jwt,
         @RequestParam file: MultipartFile,

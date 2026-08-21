@@ -15,7 +15,7 @@ export async function backend(path: string, init: RequestInit = {}) {
       ...init,
       cache: "no-store",
       headers,
-      signal: init.signal ?? AbortSignal.timeout(120_000),
+      signal: init.signal ?? AbortSignal.timeout(180_000),
     });
     const body = await response.text();
     return new NextResponse(body || JSON.stringify({ detail: `API returned an empty response (${response.status}).` }), {

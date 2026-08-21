@@ -36,7 +36,7 @@ class AiPdfDeckService(private val decks: AiDeckService) {
             ?.take(140)
             ?: "PDF vocabulary"
         val request = GenerateAiDeckRequest(
-            topic = "Select useful German dictionary headwords that occur in this PDF text:\n${source.take(MAX_TEXT_LENGTH)}",
+            topic = "Select useful German dictionary headwords that occur in this PDF text:\n${sample(source)}",
             level = level,
             cardCount = cardCount,
             category = category?.trim()?.takeIf(String::isNotBlank) ?: fallbackCategory,
@@ -44,10 +44,21 @@ class AiPdfDeckService(private val decks: AiDeckService) {
         return decks.generate(request)
     }
 
+    private fun sample(text: String): String {
+        if (text.length <= MAX_TEXT_LENGTH) return text
+        val segmentLength = MAX_TEXT_LENGTH / SAMPLE_SEGMENTS
+        val lastStart = text.length - segmentLength
+        return (0 until SAMPLE_SEGMENTS).joinToString("\n\n") { index ->
+            val start = (lastStart.toLong() * index / (SAMPLE_SEGMENTS - 1)).toInt()
+            text.substring(start, start + segmentLength)
+        }
+    }
+
     private companion object {
         const val MAX_FILE_SIZE = 10L * 1024 * 1024
         const val MAX_PAGES = 100
-        const val MAX_TEXT_LENGTH = 20_000
+        const val MAX_TEXT_LENGTH = 6_000
+        const val SAMPLE_SEGMENTS = 6
         val SUPPORTED_LEVELS = setOf("A1", "A2", "B1", "B2", "C1")
     }
 }
