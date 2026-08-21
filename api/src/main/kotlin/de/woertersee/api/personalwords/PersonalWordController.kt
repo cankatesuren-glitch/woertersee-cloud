@@ -9,6 +9,7 @@ import java.util.UUID
 @RestController @RequestMapping("/api/v1/personal-words")
 class PersonalWordController(private val profiles:CurrentProfileService,private val words:PersonalWordService){
  @GetMapping fun list(@AuthenticationPrincipal jwt:Jwt)=words.list(profiles.resolve(jwt))
+ @GetMapping("/categories") fun categories(@AuthenticationPrincipal jwt:Jwt)=words.categories(profiles.resolve(jwt))
  @PostMapping @ResponseStatus(HttpStatus.CREATED) fun create(@AuthenticationPrincipal jwt:Jwt,@Valid @RequestBody body:PersonalWordRequest)=words.create(profiles.resolve(jwt),body)
  @PutMapping("/{id}") fun update(@AuthenticationPrincipal jwt:Jwt,@PathVariable id:UUID,@RequestHeader("If-Match") version:Long,@Valid @RequestBody body:PersonalWordRequest)=words.update(profiles.resolve(jwt),id,body,version)
  @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) fun delete(@AuthenticationPrincipal jwt:Jwt,@PathVariable id:UUID)=words.delete(profiles.resolve(jwt),id)

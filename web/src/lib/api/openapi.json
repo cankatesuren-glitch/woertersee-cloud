@@ -786,6 +786,18 @@
         },
         "type": "object"
       },
+      "PersonalCategorySummary": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "wordCount": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "PersonalWordRequest": {
         "properties": {
           "category": {
@@ -1055,6 +1067,13 @@
               "AZ"
             ],
             "type": "string"
+          },
+          "personalCategories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
           },
           "personalWordIds": {
             "items": {
@@ -2165,6 +2184,34 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonalWordView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "personal-word-controller"
+        ]
+      }
+    },
+    "/api/v1/personal-words/categories": {
+      "get": {
+        "operationId": "categories_2",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PersonalCategorySummary"
+                  },
+                  "type": "array"
                 }
               }
             },

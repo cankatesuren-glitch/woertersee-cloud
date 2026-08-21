@@ -12,5 +12,6 @@ data class PersonalWordRequest(
     @field:Size(max=1000) val description:String?=null
 )
 data class PersonalWordView(val id:UUID,val german:String,val english:String,val category:String?,val description:String?,val version:Long,val updatedAt:Instant)
+data class PersonalCategorySummary(val name:String,val wordCount:Int)
 data class CsvRowPreview(val row:Int,val german:String,val english:String,val category:String?,val status:String,val errors:List<String>)
 data class CsvPreview(val valid:Boolean,val added:Int,val updated:Int,val skipped:Int,val rows:List<CsvRowPreview>)

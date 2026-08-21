@@ -14,6 +14,7 @@ data class StartGameRequest(
     val wordIds: Set<UUID> = emptySet(),
     val personalWordIds: Set<UUID> = emptySet(),
     val categoryIds: Set<UUID> = emptySet(),
+    val personalCategories: Set<String> = emptySet(),
     @field:Min(1) @field:Max(100) val cardCount: Int = 10,
     val unseenOnly: Boolean = false,
     val direction: Direction = Direction.DE_EN,
