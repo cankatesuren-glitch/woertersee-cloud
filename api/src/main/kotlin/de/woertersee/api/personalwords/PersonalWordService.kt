@@ -19,6 +19,16 @@ class PersonalWordService(private val jdbc: JdbcClient) {
            FROM personal_words WHERE profile_id=:owner AND deleted_at IS NULL ORDER BY updated_at DESC"""
     ).param("owner", owner).query(::map).list()
 
+    fun categories(owner: UUID): List<PersonalCategorySummary> = jdbc.sql(
+        """SELECT category AS name,count(*) AS word_count
+           FROM personal_words
+           WHERE profile_id=:owner AND deleted_at IS NULL
+             AND category IS NOT NULL AND btrim(category)<>''
+           GROUP BY category ORDER BY lower(category)"""
+    ).param("owner",owner).query { rs, _ ->
+        PersonalCategorySummary(rs.getString("name"),rs.getInt("word_count"))
+    }.list()
+
     @Transactional
     fun create(owner: UUID, request: PersonalWordRequest): PersonalWordView {
         val id = UUID.randomUUID()

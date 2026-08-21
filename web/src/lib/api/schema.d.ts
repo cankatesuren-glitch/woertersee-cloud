@@ -308,6 +308,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/personal-words/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["categories_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/personal-words/csv/export": {
         parameters: {
             query?: never;
@@ -721,6 +737,11 @@ export interface components {
             /** Format: int32 */
             gamesStarted?: number;
         };
+        PersonalCategorySummary: {
+            name?: string;
+            /** Format: int32 */
+            wordCount?: number;
+        };
         PersonalWordRequest: {
             category?: string | null;
             description?: string | null;
@@ -804,6 +825,7 @@ export interface components {
             direction?: "DE_EN" | "EN_DE";
             /** @enum {string} */
             ordering?: "RANDOM" | "AZ";
+            personalCategories?: string[];
             personalWordIds?: string[];
             unseenOnly?: boolean;
             wordIds?: string[];
@@ -1445,6 +1467,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    categories_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonalCategorySummary"][];
+                };
             };
         };
     };

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Word = { id: string; german: string; english: string };
 type Category = { id: string; name: string; wordCount: number };
+type PersonalCategory = { name: string; wordCount: number };
 type Card = {
   id: string;
   wordId: string;
@@ -29,6 +30,7 @@ type DeckMode = "quick" | "category" | "words";
 export default function PlayClient({ userName }: { userName: string }) {
   const [words, setWords] = useState<Word[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [personalCategories, setPersonalCategories] = useState<PersonalCategory[]>([]);
   const [game, setGame] = useState<Game | null>(null);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -36,6 +38,7 @@ export default function PlayClient({ userName }: { userName: string }) {
   const [notice, setNotice] = useState("");
   const [mode, setMode] = useState<DeckMode>("quick");
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [selectedPersonalCategories, setSelectedPersonalCategories] = useState<string[]>([]);
   const [wordIds, setWordIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [cardCount, setCardCount] = useState(10);
@@ -55,10 +58,12 @@ export default function PlayClient({ userName }: { userName: string }) {
     Promise.all([
       fetch("/api/vocabulary").then(readJson),
       fetch("/api/vocabulary/categories").then(readJson),
+      fetch("/api/personal-words/categories").then(readJson),
     ])
-      .then(([loadedWords, loadedCategories]) => {
+      .then(([loadedWords, loadedCategories, loadedPersonalCategories]) => {
         setWords(loadedWords);
         setCategories(loadedCategories);
+        setPersonalCategories(loadedPersonalCategories);
       })
       .catch(() => setError("The vocabulary catalogue is unavailable."));
   }, []);
@@ -91,6 +96,7 @@ export default function PlayClient({ userName }: { userName: string }) {
       body: JSON.stringify({
         wordIds: mode === "words" ? wordIds : [],
         categoryIds: mode === "category" ? categoryIds : [],
+        personalCategories: mode === "category" ? selectedPersonalCategories : [],
         cardCount: mode === "words" ? wordIds.length : cardCount,
         direction,
         ordering,
@@ -172,8 +178,11 @@ export default function PlayClient({ userName }: { userName: string }) {
         mode={mode}
         setMode={setMode}
         categories={categories}
+        personalCategories={personalCategories}
         categoryIds={categoryIds}
         setCategoryIds={setCategoryIds}
+        selectedPersonalCategories={selectedPersonalCategories}
+        setSelectedPersonalCategories={setSelectedPersonalCategories}
         words={visibleWords}
         wordIds={wordIds}
         setWordIds={setWordIds}
@@ -316,8 +325,11 @@ type BuilderProps = {
   mode: DeckMode;
   setMode: (value: DeckMode) => void;
   categories: Category[];
+  personalCategories: PersonalCategory[];
   categoryIds: string[];
   setCategoryIds: (ids: string[]) => void;
+  selectedPersonalCategories: string[];
+  setSelectedPersonalCategories: (names: string[]) => void;
   words: Word[];
   wordIds: string[];
   setWordIds: (ids: string[]) => void;
@@ -344,7 +356,7 @@ function DeckBuilder(props: BuilderProps) {
   const canStart =
     props.mode === "quick" ||
     (props.mode === "category"
-      ? props.categoryIds.length > 0
+      ? props.categoryIds.length > 0 || props.selectedPersonalCategories.length > 0
       : props.wordIds.length > 0);
   return (
     <main className="play-shell">
@@ -410,6 +422,21 @@ function DeckBuilder(props: BuilderProps) {
           )}
           {props.mode === "category" && (
             <div className="choice-list">
+              {props.personalCategories.length > 0 && <p className="choice-group">MY WORDS</p>}
+              {props.personalCategories.map((category) => (
+                <label className="choice" key={`personal-${category.name}`}>
+                  <input
+                    type="checkbox"
+                    checked={props.selectedPersonalCategories.includes(category.name)}
+                    onChange={() => props.toggle(category.name, props.selectedPersonalCategories, props.setSelectedPersonalCategories)}
+                  />
+                  <span>
+                    <strong>{category.name}</strong>
+                    <small>{category.wordCount} personal words</small>
+                  </span>
+                </label>
+              ))}
+              {props.categories.length > 0 && <p className="choice-group">COURSE LIBRARY</p>}
               {props.categories.map((category) => (
                 <label className="choice" key={category.id}>
                   <input

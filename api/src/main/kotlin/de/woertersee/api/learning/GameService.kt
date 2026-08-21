@@ -163,6 +163,14 @@ class GameService(private val jdbc: JdbcClient) {
                 mapOf("categoryIds" to request.categoryIds, "profileId" to profileId),
             )
         }
+        if(request.personalCategories.isNotEmpty()){
+            require(request.personalCategories.size<=100){"At most 100 personal categories may be selected"}
+            require(request.personalCategories.all { it.isNotBlank() && it.length<=140 }){"Personal category names must contain 1-140 characters"}
+            exact += jdbc.sql("""SELECT id,german,english FROM personal_words
+                WHERE profile_id=:owner AND category IN (:categories) AND deleted_at IS NULL""")
+                .param("owner",profileId).param("categories",request.personalCategories)
+                .query{rs,_->WordCandidate(rs.getObject("id",UUID::class.java),"PERSONAL",rs.getString("german"),rs.getString("english"),emptyList())}.list()
+        }
         if(exact.isNotEmpty())return exact.distinctBy{it.source to it.id}
         val clauses = mutableListOf("w.deleted_at IS NULL")
         val params = mutableMapOf<String, Any>("profileId" to profileId)
