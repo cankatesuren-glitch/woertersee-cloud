@@ -4,7 +4,7 @@
 
 .settings-lede {
   max-width: 620px;
-  color: #59647a;
+  color: var(--muted);
   font: 18px/1.6 Georgia, serif;
 }
 
@@ -22,7 +22,7 @@
   max-width: 920px;
   margin: 0 auto 56px;
   padding: 32px 24px;
-  border-block: 1px solid #d9dde5;
+  border-block: 1px solid var(--line);
 }
 
 .reminder-settings h2 {
@@ -31,7 +31,7 @@
 }
 
 .reminder-settings p:not(.eyebrow, .settings-notice) {
-  color: #667087;
+  color: var(--muted);
   line-height: 1.5;
 }
 
@@ -46,17 +46,18 @@
 }
 
 .reminder-settings label {
-  color: #263651;
+  color: var(--ink);
   font-size: 14px;
   font-weight: 700;
 }
 
 .reminder-settings input[type="text"],
 .reminder-settings input[type="time"] {
-  border: 1px solid #aeb7c6;
-  background: #fff;
+  border: 1px solid #c8c1b4;
+  border-radius: 10px;
+  background: var(--surface);
   padding: 12px;
-  color: #102b5c;
+  color: var(--ink);
   font: inherit;
 }
 
@@ -68,8 +69,9 @@
 
 .reminder-settings button {
   justify-self: start;
-  border: 1px solid #102b5c;
-  background: #102b5c;
+  border: 1px solid var(--navy);
+  border-radius: 10px;
+  background: var(--navy);
   color: white;
   padding: 12px 18px;
   font-weight: 700;
@@ -86,7 +88,7 @@
   justify-content: space-between;
   gap: 28px;
   padding: 24px 0;
-  border-bottom: 1px solid #d9dde5;
+  border-bottom: 1px solid var(--line);
 }
 
 .settings-list article div {
@@ -99,7 +101,7 @@
 }
 
 .settings-list article span {
-  color: #667087;
+  color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -138,13 +140,14 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgb(11 36 84 / 64%);
+  background: rgb(23 63 56 / 64%);
 }
 
 .settings-dialog {
   width: min(100%, 540px);
-  border: 1px solid #d9dde5;
-  background: #fffdf7;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
   padding: clamp(28px, 5vw, 48px);
   box-shadow: 0 24px 80px rgb(4 16 40 / 28%);
 }
@@ -155,7 +158,7 @@
 }
 
 .settings-dialog p:not(.eyebrow) {
-  color: #59647a;
+  color: var(--muted);
   line-height: 1.6;
 }
 
