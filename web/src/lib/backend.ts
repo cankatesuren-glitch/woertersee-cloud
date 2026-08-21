@@ -6,11 +6,16 @@ export async function backend(path: string, init: RequestInit = {}) {
   const token = (session as typeof session & { accessToken?: string } | null)?.accessToken;
   if (!token) return NextResponse.json({ detail: "Authentication required" }, { status: 401 });
   try {
+    const headers = new Headers(init.headers);
+    headers.set("Authorization", `Bearer ${token}`);
+    if (!headers.has("Content-Type") && typeof init.body === "string") {
+      headers.set("Content-Type", "application/json");
+    }
     const response = await fetch(`${apiBase}${path}`, {
       ...init,
       cache: "no-store",
-      headers: {"Content-Type":"application/json", Authorization:`Bearer ${token}`, ...init.headers},
-      signal: init.signal ?? AbortSignal.timeout(120_000),
+      headers,
+      signal: init.signal ?? AbortSignal.timeout(180_000),
     });
     const body = await response.text();
     return new NextResponse(body || JSON.stringify({ detail: `API returned an empty response (${response.status}).` }), {

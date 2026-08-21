@@ -5,6 +5,7 @@ import org.springframework.http.ProblemDetail
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.multipart.MaxUploadSizeExceededException
 
 class NotFoundException(message: String) : RuntimeException(message)
 class ConflictException(message: String) : RuntimeException(message)
@@ -20,6 +21,10 @@ class ApiErrorHandler {
 
     @ExceptionHandler(ExternalServiceException::class)
     fun externalService(error: ExternalServiceException) = problem(HttpStatus.SERVICE_UNAVAILABLE, error.message ?: "External service unavailable")
+
+    @ExceptionHandler(MaxUploadSizeExceededException::class)
+    fun uploadTooLarge(error: MaxUploadSizeExceededException) =
+        problem(HttpStatus.PAYLOAD_TOO_LARGE, "PDF files must be 10 MB or smaller")
 
     @ExceptionHandler(IllegalArgumentException::class, MethodArgumentNotValidException::class)
     fun invalid(error: Exception) = problem(HttpStatus.BAD_REQUEST, error.message ?: "Invalid request")

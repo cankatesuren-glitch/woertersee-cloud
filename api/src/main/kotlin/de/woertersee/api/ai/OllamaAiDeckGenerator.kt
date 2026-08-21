@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 import java.net.URI
 import java.net.http.HttpClient
+import java.net.http.HttpTimeoutException
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
@@ -71,7 +72,7 @@ class OllamaAiDeckGenerator(
         try {
             val response = client.send(
                 HttpRequest.newBuilder(URI.create("${ollamaUrl.trimEnd('/')}/api/chat"))
-                    .timeout(Duration.ofSeconds(90))
+                    .timeout(Duration.ofSeconds(150))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(body)).build(),
                 HttpResponse.BodyHandlers.ofString(),
@@ -82,6 +83,8 @@ class OllamaAiDeckGenerator(
             return AiDeckPreview(generated.title.trim().take(140), category, generated.cards)
         } catch (error: ExternalServiceException) {
             throw error
+        } catch (_: HttpTimeoutException) {
+            throw ExternalServiceException("Local AI took too long to build this deck. Try fewer cards or a smaller document")
         } catch (error: Exception) {
             throw ExternalServiceException("Local AI is unavailable. Make sure Ollama is running and the configured model is installed")
         }
