@@ -2,14 +2,12 @@ import { auth } from "@/auth";
 import ProgressDashboard from "./progress-dashboard";
 import "./progress-dashboard.css";
 
-const chapters = ["Kapitel 1", "Kapitel 2", "Kapitel 3", "Irregular verbs"];
-
 export default async function Home() {
   const session = await auth();
   return (
     <main>
       <nav aria-label="Primary navigation">
-        <a className="brand" href="#">
+        <a className="brand" href="/">
           Wörter<span>See</span>
         </a>
         <div className="navlinks">
@@ -61,18 +59,33 @@ export default async function Home() {
       </section>
       {session && <ProgressDashboard />}
       <section className="deck" id="decks">
-        <div>
-          <p className="eyebrow">BUILD A DECK</p>
-          <h2>Choose your next chapter.</h2>
+        <div className="deck-heading">
+          <p className="eyebrow">CHOOSE YOUR ROUTE</p>
+          <h2>Start where it feels useful.</h2>
+          <p>
+            Review what is due, turn a real-life topic into a deck or practise
+            words you saved yourself.
+          </p>
         </div>
-        <div className="chapters">
-          {chapters.map((chapter, index) => (
-            <a href="/play" key={chapter}>
-              <span>0{index + 1}</span>
-              {chapter}
-              <b>→</b>
-            </a>
-          ))}
+        <div className="route-cards">
+          <a className="route-card" href="/play">
+            <span>SMART PRACTICE</span>
+            <strong>Review today&apos;s words</strong>
+            <p>Due cards come first, followed by a manageable set of new words.</p>
+            <b>Start practice →</b>
+          </a>
+          <a className="route-card" href="/ai">
+            <span>MAKE A DECK</span>
+            <strong>Learn from a topic or PDF</strong>
+            <p>Create a draft, check every word and save only the useful ones.</p>
+            <b>Open deck studio →</b>
+          </a>
+          <a className="route-card" href="/words">
+            <span>YOUR LIBRARY</span>
+            <strong>Practise your own words</strong>
+            <p>Return to categories and vocabulary you collected along the way.</p>
+            <b>View my words →</b>
+          </a>
         </div>
       </section>
     </main>
