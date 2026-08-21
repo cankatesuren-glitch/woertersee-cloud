@@ -36,6 +36,17 @@ export type ProgressDashboard = {
 
 export type PersonalWord = { id: string; german: string; english: string; category: string | null; description: string | null };
 
+export type AiDeckCard = {
+  german: string;
+  english: string;
+  description: string | null;
+  preterite: string | null;
+  perfect: string | null;
+};
+
+export type AiDeckPreview = { title: string; category: string; cards: AiDeckCard[] };
+export type AiDeckImportResult = { added: number; skipped: number };
+
 export type GameResult = "KNOWN" | "DIFFICULT";
 
 export type GameCard = {
@@ -92,6 +103,57 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
+}
+
+async function apiError(response: Response, fallback: string): Promise<ApiError> {
+  const body = await response.json().catch(() => null) as { detail?: string } | null;
+  return new ApiError(body?.detail ?? fallback, response.status);
+}
+
+export async function generateAiDeck(
+  accessToken: string,
+  request: { topic: string; level: string; cardCount: number; category: string | null },
+): Promise<AiDeckPreview> {
+  if (!apiUrl) throw new ApiError("EXPO_PUBLIC_API_URL is not configured.");
+  const response = await fetch(`${apiUrl}/api/v1/ai/decks/generate`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) throw await apiError(response, "The deck could not be created.");
+  return response.json() as Promise<AiDeckPreview>;
+}
+
+export async function generateAiDeckFromPdf(
+  accessToken: string,
+  file: { uri: string; name: string; mimeType?: string | null },
+  request: { level: string; cardCount: number; category: string | null },
+): Promise<AiDeckPreview> {
+  if (!apiUrl) throw new ApiError("EXPO_PUBLIC_API_URL is not configured.");
+  const data = new FormData();
+  data.append("file", { uri: file.uri, name: file.name, type: file.mimeType ?? "application/pdf" } as unknown as Blob);
+  data.append("level",request.level);
+  data.append("cardCount",String(request.cardCount));
+  if(request.category)data.append("category",request.category);
+  const response = await fetch(`${apiUrl}/api/v1/ai/decks/generate-from-pdf`, {
+    method: "POST", headers: { Authorization: `Bearer ${accessToken}` }, body: data,
+  });
+  if (!response.ok) throw await apiError(response, "The PDF deck could not be created.");
+  return response.json() as Promise<AiDeckPreview>;
+}
+
+export async function importAiDeck(
+  accessToken: string,
+  preview: AiDeckPreview,
+): Promise<AiDeckImportResult> {
+  if (!apiUrl) throw new ApiError("EXPO_PUBLIC_API_URL is not configured.");
+  const response = await fetch(`${apiUrl}/api/v1/ai/decks/import`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ category: preview.category, cards: preview.cards }),
+  });
+  if (!response.ok) throw await apiError(response, "The reviewed cards could not be saved.");
+  return response.json() as Promise<AiDeckImportResult>;
 }
 
 export async function getProgressDashboard(accessToken: string): Promise<ProgressDashboard> {
